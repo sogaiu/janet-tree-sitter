@@ -1,0 +1,19 @@
+* valgrind
+
+* support TREE_SITTER_DIR env var as dir under which to look for bin dir
+  containing dyn libs
+
+* consider dynamic variable to hold current source, then have a
+  node_text function?
+
+* wrap TSPoint?
+
+* implement compare in abstract?
+
+* add pyrmont to credits
+
+* add bakpakin to credits for pieces of janet
+
+* possibly look at this stackoverflow post later:
+  https://stackoverflow.com/questions/49322955/c-copy-struct-with-pointers-from-stack-to-heap/49323149
+  it mentions TSNode
