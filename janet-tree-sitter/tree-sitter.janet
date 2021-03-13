@@ -27,14 +27,23 @@
 
 (comment
 
-  (lang-name-to-path "clojure")
-  # => "/home/user/.tree-sitter/bin/clojure.so"
+  (let [base (path/basename (lang-name-to-path "clojure"))]
+    (and (string/has-prefix? "clojure" base)
+         (or (string/has-suffix? ".so" base)
+             (string/has-suffix? ".dll" base))))
+  # => true
 
-  (lang-name-to-path "janet_simple")
-  # => "/home/user/.tree-sitter/bin/janet_simple.so"
+  (let [base (path/basename (lang-name-to-path "janet_simple"))]
+    (and (string/has-prefix? "janet_simple" base)
+         (or (string/has-suffix? ".so" base)
+             (string/has-suffix? ".dll" base))))
+  # => true
 
-  (lang-name-to-path "janet-simple")
-  # => "/home/user/.tree-sitter/bin/janet_simple.so"
+  (let [base (path/basename (lang-name-to-path "janet-simple"))]
+    (and (string/has-prefix? "janet_simple" base)
+         (or (string/has-suffix? ".so" base)
+             (string/has-suffix? ".dll" base))))
+  # => true
 
   )
 
