@@ -1,18 +1,34 @@
 * valgrind
+  * invocation command(s):
+  valgrind --tool=memcheck --track-origins=yes --trace-children=yes --dsymutil=yes --leak-check=full --show-leak-kinds=all janet usages/clojure.janet
+  valgrind --tool=callgrind janet usages/clojure.janet
+  kcachegrind callgrind.out.*
+  * understanding the output
+  * https://github.com/janet-lang/janet/blob/d3e52a2afb908509f2bfc13e1b4ca07f7d8dd190/Makefile#L186-L216
 
-* support TREE_SITTER_DIR env var as dir under which to look for bin dir
-  containing dyn libs
+* janet wrapper of c
+ * consider dynamic variable to hold current source, then have a
+   node_text function?
 
-* consider dynamic variable to hold current source, then have a
-  node_text function?
+* create README
+  * prerequisites
+    * janet / jpm
+    * one or more relevant tree-sitter grammars installed
+  * tests won't work without tree-sitter grammars for:
+    * clojure
+    * janet-simple
+  * credits
+    * bakpakin - pieces of janet, path.janet
+    * pyrmont - discussion
+    * Saikyun - discussion and text-experiment
+
+* windows
+  * see if it works there
+  * is USER_PROFILE an appropriate place to look?
 
 * wrap TSPoint?
 
 * implement compare in abstract?
-
-* add pyrmont to credits
-
-* add bakpakin to credits for pieces of janet
 
 * possibly look at this stackoverflow post later:
   https://stackoverflow.com/questions/49322955/c-copy-struct-with-pointers-from-stack-to-heap/49323149
