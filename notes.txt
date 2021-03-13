@@ -1,17 +1,13 @@
 * create README
   * uses git submodules, clone with --recursive
   * prerequisites
-    * various windows requirements
-      * developer mode enabled if windows 10, otherwise good luck
-      * git clone -c core.symlinks=true --recursive <url>
-      * grammars need npm and python versions of some sort
     * janet / jpm
     * one or more relevant tree-sitter grammars installed
+      * grammars need npm and python versions of some sort to be built
   * test issues
     * won't work without tree-sitter grammars for:
       * clojure
       * janet-simple
-    * some tests don't account for windows file paths
   * credits
     * bakpakin - pieces of janet, path.janet
     * pyrmont - discussion
