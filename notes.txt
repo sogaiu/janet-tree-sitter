@@ -1,3 +1,22 @@
+* create README
+  * uses git submodules, clone with --recursive
+  * prerequisites
+    * various windows requirements
+      * developer mode enabled if windows 10, otherwise good luck
+      * git clone -c core.symlinks=true --recursive <url>
+      * grammars need npm and python versions of some sort
+    * janet / jpm
+    * one or more relevant tree-sitter grammars installed
+  * test issues
+    * won't work without tree-sitter grammars for:
+      * clojure
+      * janet-simple
+    * some tests don't account for windows file paths
+  * credits
+    * bakpakin - pieces of janet, path.janet
+    * pyrmont - discussion
+    * Saikyun - discussion and text-experiment
+
 * valgrind
   * invocation command(s):
   valgrind --tool=memcheck --track-origins=yes --trace-children=yes --dsymutil=yes --leak-check=full --show-leak-kinds=all janet usages/clojure.janet
@@ -9,22 +28,6 @@
 * janet wrapper of c
  * consider dynamic variable to hold current source, then have a
    node_text function?
-
-* create README
-  * prerequisites
-    * janet / jpm
-    * one or more relevant tree-sitter grammars installed
-  * tests won't work without tree-sitter grammars for:
-    * clojure
-    * janet-simple
-  * credits
-    * bakpakin - pieces of janet, path.janet
-    * pyrmont - discussion
-    * Saikyun - discussion and text-experiment
-
-* windows
-  * see if it works there
-  * is USER_PROFILE an appropriate place to look?
 
 * wrap TSPoint?
 
