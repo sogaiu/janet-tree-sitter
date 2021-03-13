@@ -9,8 +9,8 @@
   :cflags   [;default-cflags
              "-Itree-sitter/lib/include"
              "-Itree-sitter/lib/src"
-             "-std=c99" "-Wall" "-Wextra"
-             # XXX: for debugging
-             "-O0" "-g3"]
+             # XXX: for debugging with gdb
+             #"-O0" "-g3"
+            ]
   :source ["janet-tree-sitter/tree_sitter.c"
            "tree-sitter/lib/src/lib.c"])

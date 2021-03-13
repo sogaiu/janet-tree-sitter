@@ -7,7 +7,7 @@
   (unless tree-sitter-dir
     (if-let [home (os/getenv "HOME")]
       (set tree-sitter-dir (path/join home ".tree-sitter"))
-      (when-let [user-profile (os/getenv "USER_PROFILE")]
+      (when-let [user-profile (os/getenv "USERPROFILE")]
         (set tree-sitter-dir (path/join user-profile ".tree-sitter"))))
     (unless tree-sitter-dir
       (break)))
