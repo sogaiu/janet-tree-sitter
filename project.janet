@@ -78,7 +78,8 @@
        (each entry (in (dyn :rules) "build")
          (each item entry
            (when (string? item)
-             (when (string/has-prefix? "build/" item)
+             (when (or (string/has-prefix? "build/" item)
+                       (string/has-prefix? "build\\" item))
                (set build-paths entry)
                (break)))))
        # XXX: possibly just ignore?
