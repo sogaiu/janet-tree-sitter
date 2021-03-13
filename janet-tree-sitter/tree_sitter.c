@@ -30,24 +30,6 @@ typedef void *Clib;
 #define error_clib() dlerror()
 #endif
 
-static char *get_processed_name(const char *name) {
-    if (name[0] == '.') return (char *) name;
-    const char *c;
-    for (c = name; *c; c++) {
-        if (*c == '/') return (char *) name;
-    }
-    size_t l = (size_t)(c - name);
-    char *ret = malloc(l + 3);
-    if (NULL == ret) {
-      fprintf(stderr, "out of memory\n");
-      exit(1);
-    }
-    ret[0] = '.';
-    ret[1] = '/';
-    memcpy(ret + 2, name, l + 1);
-    return ret;
-}
-
 ////////
 
 typedef TSLanguage* (*JTSLang)(void);
@@ -102,126 +84,20 @@ const JanetAbstractType jts_parser_type = {
 
 ////////
 
-// XXX: it's likely this could use a lot of improvement :)
-char* ts_fn_name_from_path(const char* path) {
-  // XXX: enough?
-  char g_name[128] = "";
-  char* temp = path;
-
-  // XXX: what about windows?
-  const char* slash = strrchr(path, '/');
-  if (slash != NULL) {
-    // XXX: how to check if this is ok to do?
-    temp = slash + 1;
-  }
-
-  const char* dot = strrchr(temp, '.');
-  if (dot != NULL) {
-    // XXX: is it safe to use slash here when it is NULL?
-    strncpy(g_name, temp, dot - slash - 1);
-  }
-
-  char* ts_prefix = "tree_sitter_";
-
-  char* fn_name = malloc(strlen(ts_prefix) + strlen(g_name));
-  if (NULL == fn_name) {
-    fprintf(stderr, "out of memory\n");
-    exit(1);
-  }
-
-  strncpy(fn_name, ts_prefix, strlen(ts_prefix));
-  strncpy(fn_name + strlen(ts_prefix), g_name, strlen(g_name));
-
-  return fn_name;
-}
-
-char* ts_fn_name_from_grammar_name(const char* name) {
-  char* ts_prefix = "tree_sitter_";
-
-  char* fn_name = malloc(strlen(ts_prefix) + strlen(name) + 1);
-  if (NULL == fn_name) {
-    fprintf(stderr, "out of memory\n");
-    exit(1);
-  }
-
-  char* from = fn_name;
-  strncpy(from, ts_prefix, strlen(ts_prefix));
-  from += strlen(ts_prefix);
-  strncpy(fn_name + strlen(ts_prefix), name, strlen(name));
-  from += strlen(name);
-  // null-terminate
-  *from = '\0';
-
-  return fn_name;
-}
-
-char* ts_lib_path_from_grammar_name(const char* name) {
-  // XXX: does it matter that getenv is not thread-safe?
-  char* home_dir = getenv("HOME");
-  if (strlen(home_dir) == 0) {
-    home_dir = getenv("USER_PROFILE");
-    if (strlen(home_dir) == 0) {
-      fprintf(stderr, "HOME or USER_PROFILE must be set\n");
-      exit(1);
-    }
-  }
-
-  const char* ts_bin_path = "/.tree-sitter/bin/";
-
-#if defined(WIN32) || defined(_WIN32)
-  char* ext = ".dll";
-#else
-  char* ext = ".so";
-#endif
-
-  // /home/user + /.tree-sitter/bin/ + clojure + .so (or .dll) + 0
-  size_t path_len = strlen(home_dir) + strlen(ts_bin_path) + \
-                    strlen(name) + strlen(ext) + 1;
-
-  char* path = malloc(path_len);
-  
-  if (NULL == path) {
-    fprintf(stderr, "out of memory\n");
-    exit(1);
-  }
-
-  char* from = path;
-  strncpy(from, home_dir, strlen(home_dir));
-  from += strlen(home_dir);
-  strncpy(from, ts_bin_path, strlen(ts_bin_path));
-  from += strlen(ts_bin_path);
-  strncpy(from, name, strlen(name));
-  from += strlen(name);
-  strncpy(from, ext, strlen(ext));
-  from += strlen(ext);
-  // null-terminate
-  *from = '\0';
-
-  return path;
-}
-
 static Janet cfun_ts_init(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
+  janet_fixarity(argc, 2);
 
-  const char* name = (const char *)janet_getstring(argv, 0);
+  const char* path = (const char *)janet_getstring(argv, 0);
 
-  const char* fn_name = ts_fn_name_from_grammar_name(name);
-
-  const char* path = ts_lib_path_from_grammar_name(name);
-
-  char *processed_name = get_processed_name(path);
-  Clib lib = load_clib(processed_name);
-  JTSLang jtsl;
-
-  if (name != processed_name) {
-    free(processed_name);
-  }
-
+  Clib lib = load_clib(path);
   if (!lib) {
     fprintf(stderr, error_clib());
     return janet_wrap_nil();
   }
 
+  const char* fn_name = (const char*)janet_getstring(argv, 1);
+
+  JTSLang jtsl;
   jtsl = (JTSLang) symbol_clib(lib, fn_name);
   if (!jtsl) {
     fprintf(stderr, "could not find the target TSLanguage symbol");
@@ -417,7 +293,6 @@ static Janet cfun_node_text(int32_t argc, Janet* argv) {
 }
 
 static const JanetMethod node_methods[] = {
-  // XXX: fix docs
   {"eq", cfun_node_eq},
   {"has-error", cfun_node_has_error},
   {"is-named", cfun_node_is_named},
@@ -445,7 +320,6 @@ static const JanetMethod node_methods[] = {
 
 ////////
 
-
 static Janet cfun_tree_root_node(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -466,7 +340,6 @@ static Janet cfun_tree_root_node(int32_t argc, Janet* argv) {
 }
 
 static const JanetMethod tree_methods[] = {
-  // XXX: fix docs
   {"root-node", cfun_tree_root_node},
   {NULL, NULL}
 };
@@ -531,7 +404,6 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet* argv) {
 }
 
 static const JanetMethod parser_methods[] = {
-  // XXX: fix docs
   //  {"set-language", cfun_parser_set_language},
   //  {"language", cfun_parser_language},
   {"parse-string", cfun_parser_parse_string},
@@ -561,11 +433,12 @@ static int jts_parser_get(void* p, Janet key, Janet* out) {
 }
 
 static const JanetReg cfuns[] = {
-  // XXX: fix docs
-  {"init", cfun_ts_init,
-   "(tree-sitter/init name)\n\n"
+  {"_init", cfun_ts_init,
+   "(_tree-sitter/_init path fn-name)\n\n"
    "Return tree-sitter parser for grammar.\n"
-   "`name` identifies a grammar, e.g. `janet_simple` or `clojure`.\n"},
+   "`path` is a file path to the dynamic library for a grammar.\n"
+   "`fn-name` is the grammar-specific init function name as a string, e.g.\n"
+   "`tree_sitter_clojure` or `tree_sitter_janet_simple`."},
   {NULL, NULL, NULL}
 };
 

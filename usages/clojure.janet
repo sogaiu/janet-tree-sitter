@@ -1,4 +1,4 @@
-(import ../build/tree-sitter)
+(import ../janet-tree-sitter/tree-sitter)
 
 (comment
 

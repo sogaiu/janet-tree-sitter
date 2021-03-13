@@ -5,7 +5,7 @@
   :repo "git+https://gitlab.com/sogaiu/janet-tree-sitter")
 
 (declare-native
-  :name "tree-sitter"
+  :name "_tree-sitter"
   :cflags   [;default-cflags
              "-Itree-sitter/lib/include"
              "-Itree-sitter/lib/src"
