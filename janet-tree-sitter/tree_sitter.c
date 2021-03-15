@@ -255,6 +255,23 @@ static Janet cfun_node_child_count(int32_t argc, Janet* argv) {
   return janet_wrap_integer(ts_node_child_count(node->node));
 }
 
+static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 3);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  uint32_t start = (uint32_t)janet_getinteger(argv, 1);
+  uint32_t end = (uint32_t)janet_getinteger(argv, 2);
+  //
+  Node* desc =
+    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+  // XXX: error checking?
+  desc->node = ts_node_descendant_for_byte_range(node->node, start, end);
+  if (ts_node_is_null(desc->node)) {
+    return janet_wrap_nil();
+  }
+  return janet_wrap_abstract(desc);
+}
+
 static Janet cfun_node_tree(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
 
@@ -305,6 +322,7 @@ static const JanetMethod node_methods[] = {
   {"next-sibling", cfun_node_next_sibling},
   {"prev-sibling", cfun_node_prev_sibling},
   {"child-count", cfun_node_child_count},
+  {"descendant-for-byte-range", cfun_node_descendant_for_byte_range},
   {"tree", cfun_node_tree},
   {"text", cfun_node_text},
   {NULL, NULL}

@@ -15,6 +15,9 @@
 
   (def sn (:child (:child rn 0) 1))
 
+  (:eq sn (:descendant-for-byte-range rn 1 4))
+  # => true
+
   (:text sn src)
   # => "defn"
 
@@ -51,10 +54,16 @@
 
   (def sqtn (:next-sibling (:next-sibling sn)))
 
+  (:eq sqtn (:descendant-for-byte-range rn 12 14))
+  # => true
+
   (:type sqtn)
   # => "sqr_tup_lit"
 
   (:expr sqtn)
   # => "(sqr_tup_lit (sym_lit))"
+
+  (:text (:descendant-for-byte-range rn 13 13) src)
+  # => "x"
 
   )
