@@ -272,6 +272,29 @@ static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(desc);
 }
 
+// XXX: not wrapping TSPoint
+static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 5);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  uint32_t start_row = (uint32_t)janet_getinteger(argv, 1);
+  uint32_t start_col = (uint32_t)janet_getinteger(argv, 2);
+  uint32_t end_row = (uint32_t)janet_getinteger(argv, 3);
+  uint32_t end_col = (uint32_t)janet_getinteger(argv, 4);
+  //
+  TSPoint start_p = (TSPoint){start_row, start_col};
+  TSPoint end_p = (TSPoint){end_row, end_col};
+  //
+  Node* desc =
+    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+  // XXX: error checking?
+  desc->node = ts_node_descendant_for_point_range(node->node, start_p, end_p);
+  if (ts_node_is_null(desc->node)) {
+    return janet_wrap_nil();
+  }
+  return janet_wrap_abstract(desc);
+}
+
 static Janet cfun_node_tree(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
 
@@ -323,6 +346,7 @@ static const JanetMethod node_methods[] = {
   {"prev-sibling", cfun_node_prev_sibling},
   {"child-count", cfun_node_child_count},
   {"descendant-for-byte-range", cfun_node_descendant_for_byte_range},
+  {"descendant-for-point-range", cfun_node_descendant_for_point_range},
   {"tree", cfun_node_tree},
   {"text", cfun_node_text},
   {NULL, NULL}

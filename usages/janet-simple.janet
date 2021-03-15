@@ -18,6 +18,9 @@
   (:eq sn (:descendant-for-byte-range rn 1 4))
   # => true
 
+  (:eq sn (:descendant-for-point-range rn 0 1 0 4))
+  # => true
+
   (:text sn src)
   # => "defn"
 
@@ -57,6 +60,9 @@
   (:eq sqtn (:descendant-for-byte-range rn 12 14))
   # => true
 
+  (:eq sqtn (:descendant-for-point-range rn 0 12 0 14))
+  # => true
+
   (:type sqtn)
   # => "sqr_tup_lit"
 
@@ -64,6 +70,9 @@
   # => "(sqr_tup_lit (sym_lit))"
 
   (:text (:descendant-for-byte-range rn 13 13) src)
+  # => "x"
+
+  (:text (:descendant-for-point-range rn 0 13 0 13) src)
   # => "x"
 
   )
