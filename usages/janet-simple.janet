@@ -13,7 +13,15 @@
   (:has-error rn)
   # => false
 
-  (def sn (:child (:child rn 0) 1))
+  (def pn (:child rn 0))
+
+  (:child-count pn)
+  # => 6
+
+  (:named-child-count pn)
+  # => 4
+
+  (def sn (:child pn 1))
 
   (:eq sn (:descendant-for-byte-range rn 1 4))
   # => true
