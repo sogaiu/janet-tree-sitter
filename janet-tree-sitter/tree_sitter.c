@@ -315,7 +315,7 @@ static Janet cfun_node_text(int32_t argc, Janet* argv) {
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
 
   const char* source = (const char *)janet_getstring(argv, 1);
-  
+
   uint32_t start = ts_node_start_byte(node->node);
   uint32_t end = ts_node_end_byte(node->node);
 
@@ -381,8 +381,35 @@ static Janet cfun_tree_root_node(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(rn);
 }
 
+static Janet cfun_tree_edit(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 10);
+  // XXX: error checking?
+  Tree* tree = janet_getabstract(argv, 0, &jts_tree_type);
+  uint32_t start_byte = janet_getinteger(argv, 1);
+  uint32_t old_end_byte = janet_getinteger(argv, 2);
+  uint32_t new_end_byte = janet_getinteger(argv, 3);
+  TSPoint start_point = (TSPoint){(uint32_t)janet_getinteger(argv, 4),
+                                  (uint32_t)janet_getinteger(argv, 5)};
+  TSPoint old_end_point = (TSPoint){(uint32_t)janet_getinteger(argv, 6),
+                                    (uint32_t)janet_getinteger(argv, 7)};
+  TSPoint new_end_point = (TSPoint){(uint32_t)janet_getinteger(argv, 8),
+                                    (uint32_t)janet_getinteger(argv, 9)};
+
+  TSInputEdit tsinputedit = (TSInputEdit){.start_byte = start_byte,
+                                          .old_end_byte = old_end_byte,
+                                          .new_end_byte = new_end_byte,
+                                          .start_point = start_point,
+                                          .old_end_point = old_end_point,
+                                          .new_end_point = new_end_point};
+
+  ts_tree_edit(tree->tree, &tsinputedit);
+
+  return janet_wrap_nil();
+}
+
 static const JanetMethod tree_methods[] = {
   {"root-node", cfun_tree_root_node},
+  {"edit", cfun_tree_edit},
   {NULL, NULL}
 };
 
@@ -445,10 +472,65 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(tree);
 }
 
+static const char *jts_read_lines_fn(void *payload,
+                                     uint32_t byte_index,
+                                     TSPoint position,
+                                     uint32_t *bytes_read) {
+  JanetArray* lines = (JanetArray*)payload;
+
+  uint32_t row = position.row;
+  if (row >= lines->count) {
+    *bytes_read = 0;
+    // XXX: or should this be ""?
+    return NULL;
+  }
+
+  const char* line = (const char*)janet_unwrap_string(lines->data[row]);
+
+  uint32_t col = position.column;
+  if (col >= strlen(line)) {
+    *bytes_read = 0;
+    // XXX: or should this be ""?
+    return NULL;
+  }
+
+  *bytes_read = strlen(line) - col;
+  // XXX: is this ok or is it necessary to somehow copy the data and return
+  //      that instead?  how would one clean that up though?
+  return line + col;
+}
+
+static Janet cfun_parser_parse(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 3);
+  Parser* parser = janet_getabstract(argv, 0, &jts_parser_type);
+  TSParser* tsparser = parser->parser;
+  Tree* old_tree = janet_getabstract(argv, 1, &jts_tree_type);
+  TSTree* tstree = old_tree->tree;
+  JanetArray* lines = janet_getarray(argv, 2);
+
+  TSInput tsinput = (TSInput){.payload = (void*)lines,
+                              .read = &jts_read_lines_fn,
+                              .encoding = TSInputEncodingUTF8};
+
+  TSTree* new_tree = ts_parser_parse(tsparser, tstree, tsinput);
+
+  if (NULL == new_tree) {
+    return janet_wrap_nil();
+  }
+
+  Tree* tree =
+    (Tree *)janet_abstract(&jts_tree_type, sizeof(Tree));
+
+  tree->tree = new_tree;
+
+  return janet_wrap_abstract(tree);
+}
+
 static const JanetMethod parser_methods[] = {
   //  {"set-language", cfun_parser_set_language},
   //  {"language", cfun_parser_language},
   {"parse-string", cfun_parser_parse_string},
+  {"parse", cfun_parser_parse},
   //  {"set-included-ranges", cfun_parser_set_included_ranges},
   //  {"included-ranges", cfun_parser_included_ranges},
   {NULL, NULL}
