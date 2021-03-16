@@ -205,6 +205,14 @@ static Janet cfun_node_start_point_col(int32_t argc, Janet* argv) {
   return janet_wrap_integer(point.column);
 }
 
+static Janet cfun_node_end_point_col(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  TSPoint point = ts_node_end_point(node->node);
+  return janet_wrap_integer(point.column);
+}
+
 static Janet cfun_node_child(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 2);
   // XXX: error checking?
@@ -384,7 +392,7 @@ static const JanetMethod node_methods[] = {
   {"start-point-row", cfun_node_start_point_row},
   {"start-point-col", cfun_node_start_point_col},
   //{"end-point-row", cfun_node_end_point_row},
-  //{"end-point-col", cfun_node_end_point_col},
+  {"end-point-col", cfun_node_end_point_col},
   {"child", cfun_node_child},
   {"named-child", cfun_node_named_child},
   {"parent", cfun_node_parent},

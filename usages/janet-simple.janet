@@ -86,6 +86,9 @@
   (:start-point-col sqtn)
   # => 12
 
+  (:end-point-col sqtn)
+  # => 15
+
   (:text (:descendant-for-byte-range rn 13 13) src)
   # => "x"
 
