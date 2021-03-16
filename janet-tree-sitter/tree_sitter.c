@@ -221,6 +221,22 @@ static Janet cfun_node_child(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(child);
 }
 
+static Janet cfun_node_named_child(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 2);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  // XXX: how to handle negative appropriately?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+  Node* child =
+    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+  // XXX: error checking?
+  child->node = ts_node_named_child(node->node, idx);
+  if (ts_node_is_null(child->node)) {
+    return janet_wrap_nil();
+  }
+  return janet_wrap_abstract(child);
+}
+
 static Janet cfun_node_parent(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -370,6 +386,7 @@ static const JanetMethod node_methods[] = {
   //{"end-point-row", cfun_node_end_point_row},
   //{"end-point-col", cfun_node_end_point_col},
   {"child", cfun_node_child},
+  {"named-child", cfun_node_named_child},
   {"parent", cfun_node_parent},
   {"next-sibling", cfun_node_next_sibling},
   {"prev-sibling", cfun_node_prev_sibling},

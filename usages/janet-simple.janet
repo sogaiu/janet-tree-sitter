@@ -23,6 +23,9 @@
 
   (def sn (:child pn 1))
 
+  (:eq sn (:named-child pn 0))
+  # => true
+
   (:eq sn (:descendant-for-byte-range rn 1 4))
   # => true
 
