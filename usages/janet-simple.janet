@@ -77,6 +77,9 @@
   (:expr sqtn)
   # => "(sqr_tup_lit (sym_lit))"
 
+  (:start-point-row sqtn)
+  # => 0
+
   (:start-point-col sqtn)
   # => 12
 

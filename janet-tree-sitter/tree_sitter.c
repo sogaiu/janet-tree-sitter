@@ -189,6 +189,14 @@ static Janet cfun_node_end_byte(int32_t argc, Janet* argv) {
   return janet_wrap_integer(ts_node_end_byte(node->node));
 }
 
+static Janet cfun_node_start_point_row(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  TSPoint point = ts_node_start_point(node->node);
+  return janet_wrap_integer(point.row);
+}
+
 static Janet cfun_node_start_point_col(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -357,7 +365,7 @@ static const JanetMethod node_methods[] = {
   {"start-byte", cfun_node_start_byte},
   {"end-byte", cfun_node_end_byte},
   // XXX: wrap TSPoint?
-  //{"start-point-row", cfun_node_start_point_row},
+  {"start-point-row", cfun_node_start_point_row},
   {"start-point-col", cfun_node_start_point_col},
   //{"end-point-row", cfun_node_end_point_row},
   //{"end-point-col", cfun_node_end_point_col},
