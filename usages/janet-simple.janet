@@ -69,6 +69,9 @@
   (:expr sqtn)
   # => "(sqr_tup_lit (sym_lit))"
 
+  (:start-point-col sqtn)
+  # => 12
+
   (:text (:descendant-for-byte-range rn 13 13) src)
   # => "x"
 
