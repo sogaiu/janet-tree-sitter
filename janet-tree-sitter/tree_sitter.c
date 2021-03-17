@@ -123,30 +123,77 @@ static Janet cfun_ts_init(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(parser);
 }
 
-static Janet cfun_node_eq(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 2);
+////////
+
+/**
+ * Get the node's type as a null-terminated string.
+ */
+static Janet cfun_node_type(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  Node* node = (Node *)janet_getabstract(argv, 0, &jts_node_type);
   // XXX: error checking?
-  Node* node_l = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: error checking?
-  Node* node_r = janet_getabstract(argv, 1, &jts_node_type);
-  if (ts_node_eq(node_l->node, node_r->node)) {
-    return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
-  }
+  const char* the_type = ts_node_type(node->node);
+  return janet_cstringv(the_type);
 }
 
-static Janet cfun_node_has_error(int32_t argc, Janet* argv) {
+/**
+ * Get the node's start byte.
+ */
+static Janet cfun_node_start_byte(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  if (ts_node_has_error(node->node)) {
-    return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
-  }
+  return janet_wrap_integer(ts_node_start_byte(node->node));
 }
 
+/**
+ * Get the node's end byte.
+ */
+static Janet cfun_node_end_byte(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  return janet_wrap_integer(ts_node_end_byte(node->node));
+}
+
+/**
+ * Get the node's start position row.
+ */
+static Janet cfun_node_start_point_row(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  TSPoint point = ts_node_start_point(node->node);
+  return janet_wrap_integer(point.row);
+}
+
+/**
+ * Get the node's start position column.
+ */
+static Janet cfun_node_start_point_col(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  TSPoint point = ts_node_start_point(node->node);
+  return janet_wrap_integer(point.column);
+}
+
+/**
+ * Get the node's end position column.
+ */
+static Janet cfun_node_end_point_col(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  TSPoint point = ts_node_end_point(node->node);
+  return janet_wrap_integer(point.column);
+}
+
+/**
+ * Check if the node is *named*. Named nodes correspond to named rules in the
+ * grammar, whereas *anonymous* nodes correspond to string literals in the
+ * grammar.
+ */
 static Janet cfun_node_is_named(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -158,61 +205,41 @@ static Janet cfun_node_is_named(int32_t argc, Janet* argv) {
   }
 }
 
-static Janet cfun_node_type(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  Node* node = (Node *)janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: error checking?
-  const char* the_type = ts_node_type(node->node);
-  return janet_cstringv(the_type);
-}
-
-static Janet cfun_node_expr(int32_t argc, Janet* argv) {
+/**
+ * Check if the node is a syntax error or contains any syntax errors.
+ */
+static Janet cfun_node_has_error(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  char* text = ts_node_string(node->node);
-  // janet_cstring seems to help with not ending up with extra stuff at end
-  return janet_wrap_string(janet_cstring(text));
+  if (ts_node_has_error(node->node)) {
+    return janet_wrap_true();
+  } else {
+    return janet_wrap_false();
+  }
 }
 
-static Janet cfun_node_start_byte(int32_t argc, Janet* argv) {
+/**
+ * Get the node's immediate parent.
+ */
+static Janet cfun_node_parent(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  return janet_wrap_integer(ts_node_start_byte(node->node));
-}
-
-static Janet cfun_node_end_byte(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
+  Node* parent =
+    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
   // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  return janet_wrap_integer(ts_node_end_byte(node->node));
+  parent->node = ts_node_parent(node->node);
+  if (ts_node_is_null(parent->node)) {
+    return janet_wrap_nil();
+  }
+  return janet_wrap_abstract(parent);
 }
 
-static Janet cfun_node_start_point_row(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  TSPoint point = ts_node_start_point(node->node);
-  return janet_wrap_integer(point.row);
-}
-
-static Janet cfun_node_start_point_col(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  TSPoint point = ts_node_start_point(node->node);
-  return janet_wrap_integer(point.column);
-}
-
-static Janet cfun_node_end_point_col(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  TSPoint point = ts_node_end_point(node->node);
-  return janet_wrap_integer(point.column);
-}
-
+/**
+ * Get the node's child at the given index, where zero represents the first
+ * child.
+ */
 static Janet cfun_node_child(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 2);
   // XXX: error checking?
@@ -229,6 +256,9 @@ static Janet cfun_node_child(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(child);
 }
 
+/**
+ * Get the node's *named* child at the given index.
+ */
 static Janet cfun_node_named_child(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 2);
   // XXX: error checking?
@@ -245,20 +275,31 @@ static Janet cfun_node_named_child(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(child);
 }
 
-static Janet cfun_node_parent(int32_t argc, Janet* argv) {
+/**
+ * Get the node's *named* child at the given index.
+ */
+static Janet cfun_node_child_count(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  Node* parent =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  parent->node = ts_node_parent(node->node);
-  if (ts_node_is_null(parent->node)) {
-    return janet_wrap_nil();
-  }
-  return janet_wrap_abstract(parent);
+  // XXX: how to handle negative appropriately?
+  return janet_wrap_integer(ts_node_child_count(node->node));
 }
 
+/**
+ * Get the node's number of *named* children.
+ */
+static Janet cfun_node_named_child_count(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  // XXX: how to handle negative appropriately?
+  return janet_wrap_integer(ts_node_named_child_count(node->node));
+}
+
+/**
+ * Get the node's next sibling.
+ */
 static Janet cfun_node_next_sibling(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -273,6 +314,9 @@ static Janet cfun_node_next_sibling(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(sibling);
 }
 
+/**
+ * Get the node's previous sibling.
+ */
 static Janet cfun_node_prev_sibling(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -287,22 +331,9 @@ static Janet cfun_node_prev_sibling(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(sibling);
 }
 
-static Janet cfun_node_child_count(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: how to handle negative appropriately?
-  return janet_wrap_integer(ts_node_child_count(node->node));
-}
-
-static Janet cfun_node_named_child_count(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: how to handle negative appropriately?
-  return janet_wrap_integer(ts_node_named_child_count(node->node));
-}
-
+/**
+ * Get the smallest node within this node that spans the given range of bytes.
+ */
 static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 3);
   // XXX: error checking?
@@ -320,6 +351,10 @@ static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(desc);
 }
 
+/**
+ * Get the smallest node within this node that spans the given range of
+ * (row, column) positions.
+ */
 // XXX: not wrapping TSPoint
 static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 5);
@@ -341,6 +376,31 @@ static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet* argv) {
     return janet_wrap_nil();
   }
   return janet_wrap_abstract(desc);
+}
+
+/**
+ * Check if two nodes are identical.
+ */
+static Janet cfun_node_eq(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 2);
+  // XXX: error checking?
+  Node* node_l = janet_getabstract(argv, 0, &jts_node_type);
+  // XXX: error checking?
+  Node* node_r = janet_getabstract(argv, 1, &jts_node_type);
+  if (ts_node_eq(node_l->node, node_r->node)) {
+    return janet_wrap_true();
+  } else {
+    return janet_wrap_false();
+  }
+}
+
+static Janet cfun_node_expr(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 1);
+  // XXX: error checking?
+  Node* node = janet_getabstract(argv, 0, &jts_node_type);
+  char* text = ts_node_string(node->node);
+  // janet_cstring seems to help with not ending up with extra stuff at end
+  return janet_wrap_string(janet_cstring(text));
 }
 
 static Janet cfun_node_tree(int32_t argc, Janet* argv) {
@@ -381,11 +441,7 @@ static Janet cfun_node_text(int32_t argc, Janet* argv) {
 }
 
 static const JanetMethod node_methods[] = {
-  {"eq", cfun_node_eq},
-  {"has-error", cfun_node_has_error},
-  {"is-named", cfun_node_is_named},
   {"type", cfun_node_type},
-  {"expr", cfun_node_expr},
   {"start-byte", cfun_node_start_byte},
   {"end-byte", cfun_node_end_byte},
   // XXX: wrap TSPoint?
@@ -393,15 +449,20 @@ static const JanetMethod node_methods[] = {
   {"start-point-col", cfun_node_start_point_col},
   //{"end-point-row", cfun_node_end_point_row},
   {"end-point-col", cfun_node_end_point_col},
+  {"is-named", cfun_node_is_named},
+  {"has-error", cfun_node_has_error},
+  {"parent", cfun_node_parent},
   {"child", cfun_node_child},
   {"named-child", cfun_node_named_child},
-  {"parent", cfun_node_parent},
-  {"next-sibling", cfun_node_next_sibling},
-  {"prev-sibling", cfun_node_prev_sibling},
   {"child-count", cfun_node_child_count},
   {"named-child-count", cfun_node_named_child_count},
+  {"next-sibling", cfun_node_next_sibling},
+  {"prev-sibling", cfun_node_prev_sibling},
   {"descendant-for-byte-range", cfun_node_descendant_for_byte_range},
   {"descendant-for-point-range", cfun_node_descendant_for_point_range},
+  {"eq", cfun_node_eq},
+  // custom
+  {"expr", cfun_node_expr},
   {"tree", cfun_node_tree},
   {"text", cfun_node_text},
   {NULL, NULL}
