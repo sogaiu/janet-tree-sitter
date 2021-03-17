@@ -533,9 +533,58 @@ static Janet cfun_tree_edit(int32_t argc, Janet* argv) {
   return janet_wrap_nil();
 }
 
+/**
+ * Compare an old edited syntax tree to a new syntax tree representing the same
+ * document, returning an array of ranges whose syntactic structure has changed.
+ *
+ * For this to work correctly, the old syntax tree must have been edited such
+ * that its ranges match up to the new tree. Generally, you'll want to call
+ * this function right after calling one of the `ts_parser_parse` functions.
+ * You need to pass the old tree that was passed to parse, as well as the new
+ * tree that was returned from that function.
+ *
+ * The returned array is allocated using `malloc` and the caller is responsible
+ * for freeing it using `free`. The length of the array will be written to the
+ * given `length` pointer.
+ */
+static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet* argv) {
+  janet_fixarity(argc, 2);
+  // XXX: error checking?
+  Tree* old_tree = janet_getabstract(argv, 0, &jts_tree_type);
+  Tree* new_tree = janet_getabstract(argv, 1, &jts_tree_type);
+  uint32_t length = 0;
+
+  TSRange* range = \
+    ts_tree_get_changed_ranges(old_tree->tree, new_tree->tree, &length);
+
+  if (length == 0) {
+    free(range);
+    return janet_wrap_nil();
+  }
+
+  // XXX: hopefully this is an appropriate way to work with tuple-building
+  Janet *ranges = janet_tuple_begin(length);
+
+  for (int i = 0; i < length; i++) {
+    Janet *tup = janet_tuple_begin(6);
+    tup[0] = janet_wrap_integer(range[i].start_byte);
+    tup[1] = janet_wrap_integer(range[i].end_byte);
+    tup[2] = janet_wrap_integer(range[i].start_point.row);
+    tup[3] = janet_wrap_integer(range[i].start_point.column);
+    tup[4] = janet_wrap_integer(range[i].end_point.row);
+    tup[5] = janet_wrap_integer(range[i].end_point.column);
+    ranges[i] = janet_wrap_tuple(janet_tuple_end(tup));
+  }
+
+  free(range);
+
+  return janet_wrap_tuple(janet_tuple_end(ranges));
+}
+
 static const JanetMethod tree_methods[] = {
   {"root-node", cfun_tree_root_node},
   {"edit", cfun_tree_edit},
+  {"get-changed-ranges", cfun_tree_get_changed_ranges},
   {NULL, NULL}
 };
 
