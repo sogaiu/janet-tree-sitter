@@ -478,6 +478,9 @@ static const JanetMethod node_methods[] = {
 
 ////////
 
+/**
+ * Get the root node of the syntax tree.
+ */
 static Janet cfun_tree_root_node(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
@@ -497,6 +500,13 @@ static Janet cfun_tree_root_node(int32_t argc, Janet* argv) {
   return janet_wrap_abstract(rn);
 }
 
+/**
+ * Edit the syntax tree to keep it in sync with source code that has been
+ * edited.
+ *
+ * You must describe the edit both in terms of byte offsets and in terms of
+ * (row, column) coordinates.
+ */
 static Janet cfun_tree_edit(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 10);
   // XXX: error checking?
