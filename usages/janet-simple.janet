@@ -97,12 +97,14 @@
 
   )
 
+# :parse can handle both buffers and strings
+# XXX: somehow keywords and symbols work too, but that is unintentional
 (comment
 
   (def lines
-    @["(defn my-fn\n"
-      "  [x]\n"
-      "  (+ x 1))"])
+    @[@"(defn my-fn\n" # this is a buffer
+      "  [x]\n"        # this is a string
+      @"  (+ x 1))"])
 
   (def src
     (string/join lines ""))

@@ -662,7 +662,18 @@ static const char *jts_read_lines_fn(void *payload,
     return NULL;
   }
 
-  const char* line = (const char*)janet_unwrap_string(lines->data[row]);
+  const char* line;
+  // XXX: keywords and symbols end up being handled by the JANET_STRING case
+  if (janet_checktype(lines->data[row], JANET_BUFFER)) {
+    JanetBuffer *buf = janet_unwrap_buffer(lines->data[row]);
+    line = \
+      (const char*)janet_string(buf->data, buf->count);
+  } else if (janet_checktype(lines->data[row], JANET_STRING)) {
+    line = (const char*)janet_unwrap_string(lines->data[row]);
+  } else {
+    // XXX: how to feedback error?
+    janet_panicf("expected buffer or string, got something else");
+  }
 
   uint32_t col = position.column;
   if (col >= strlen(line)) {
