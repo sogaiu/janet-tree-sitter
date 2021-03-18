@@ -100,12 +100,13 @@ static Janet cfun_ts_init(int32_t argc, Janet* argv) {
   JTSLang jtsl;
   jtsl = (JTSLang) symbol_clib(lib, fn_name);
   if (!jtsl) {
-    fprintf(stderr, "could not find the target TSLanguage symbol");
+    fprintf(stderr, "could not find the target grammar's initializer");
     return janet_wrap_nil();
   }
 
   TSParser *p = ts_parser_new();
   if (p == NULL) {
+    fprintf(stderr, "ts_parser_new failed");
     return janet_wrap_nil();
   }
 
@@ -115,6 +116,7 @@ static Janet cfun_ts_init(int32_t argc, Janet* argv) {
 
   bool success = ts_parser_set_language(p, jtsl());
   if (!success) {
+    fprintf(stderr, "ts_parser_set_language failed");
     // XXX: abstract will take care of this?
     //free(p);
     return janet_wrap_nil();
