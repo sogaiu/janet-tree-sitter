@@ -34,6 +34,9 @@
   (def new-t
     (:parse p t edited-lines))
 
+  (:has-error (:root-node new-t))
+  # => false
+
   (:get-changed-ranges t new-t)
   # => nil
 
@@ -76,6 +79,9 @@
 
   (def new-t
     (:parse p t edited-lines))
+
+  (:has-error (:root-node new-t))
+  # => false
 
   (:get-changed-ranges t new-t)
   # => '((1 5 0 1 0 5))
@@ -120,6 +126,9 @@
   (def new-t
     (:parse p t edited-lines))
 
+  (:has-error (:root-node new-t))
+  # => false
+
   (:get-changed-ranges t new-t)
   # => '((6 12 0 6 0 12))
 
@@ -163,6 +172,9 @@
   (def new-t
     (:parse p t edited-lines))
 
+  (:has-error (:root-node new-t))
+  # => false
+
   # XXX: keyword replaced a keyword, so why is this different?
   (:get-changed-ranges t new-t)
   # => '((5 6 1 2 1 3))
@@ -205,6 +217,9 @@
 
   (def new-t
     (:parse p t edited-lines))
+
+  (:has-error (:root-node new-t))
+  # => false
 
   # XXX: removal is not leading to something being returned here...
   (:get-changed-ranges t new-t)
@@ -251,6 +266,9 @@
   (def new-t
     (:parse p t edited-lines))
 
+  (:has-error (:root-node new-t))
+  # => false
+
   (:get-changed-ranges t new-t)
   # => '((6 8 2 0 2 2))
 
@@ -294,6 +312,9 @@
   (def new-t-1
     (:parse p t edited-lines-1))
 
+  (:has-error (:root-node new-t-1))
+  # => false
+
   (:get-changed-ranges t new-t-1)
   # => '((1 6 0 1 0 6))
 
@@ -314,6 +335,9 @@
 
   (def new-t-2
     (:parse p new-t-1 edited-lines-2))
+
+  (:has-error (:root-node new-t-2))
+  # => false
 
   (:get-changed-ranges new-t-1 new-t-2)
   # => '((7 13 0 7 0 13))
