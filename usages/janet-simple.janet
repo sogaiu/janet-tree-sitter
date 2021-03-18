@@ -49,13 +49,22 @@
 
   (:start-byte sn)
   # => 1
-  
+
   (:end-byte sn)
   # => 5
+
+  (length (:text sn src))
+  # => 4
 
   (= (- (:end-byte sn) (:start-byte sn))
      (length (:text sn src)))
   # => true
+
+  (:start-point sn)
+  # => [0 1]
+
+  (:end-point sn)
+  # => [0 5]
 
   (:eq sn (:prev-sibling (:next-sibling sn)))
   # => true
@@ -79,15 +88,6 @@
 
   (:expr sqtn)
   # => "(sqr_tup_lit (sym_lit))"
-
-  (:start-point-row sqtn)
-  # => 0
-
-  (:start-point-col sqtn)
-  # => 12
-
-  (:end-point-col sqtn)
-  # => 15
 
   (:text (:descendant-for-byte-range rn 13 13) src)
   # => "x"

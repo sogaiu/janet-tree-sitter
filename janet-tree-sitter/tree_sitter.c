@@ -159,36 +159,35 @@ static Janet cfun_node_end_byte(int32_t argc, Janet* argv) {
 }
 
 /**
- * Get the node's start position row.
+ * Get the node's start position row and column.
  */
-static Janet cfun_node_start_point_row(int32_t argc, Janet* argv) {
+static Janet cfun_node_start_point(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
   TSPoint point = ts_node_start_point(node->node);
-  return janet_wrap_integer(point.row);
+
+  Janet *tup = janet_tuple_begin(2);
+  tup[0] = janet_wrap_integer(point.row);
+  tup[1] = janet_wrap_integer(point.column);
+
+  return janet_wrap_tuple(janet_tuple_end(tup));
 }
 
 /**
- * Get the node's start position column.
+ * Get the node's end position row and column.
  */
-static Janet cfun_node_start_point_col(int32_t argc, Janet* argv) {
-  janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node* node = janet_getabstract(argv, 0, &jts_node_type);
-  TSPoint point = ts_node_start_point(node->node);
-  return janet_wrap_integer(point.column);
-}
-
-/**
- * Get the node's end position column.
- */
-static Janet cfun_node_end_point_col(int32_t argc, Janet* argv) {
+static Janet cfun_node_end_point(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
   Node* node = janet_getabstract(argv, 0, &jts_node_type);
   TSPoint point = ts_node_end_point(node->node);
-  return janet_wrap_integer(point.column);
+
+  Janet *tup = janet_tuple_begin(2);
+  tup[0] = janet_wrap_integer(point.row);
+  tup[1] = janet_wrap_integer(point.column);
+
+  return janet_wrap_tuple(janet_tuple_end(tup));
 }
 
 /**
@@ -446,11 +445,8 @@ static const JanetMethod node_methods[] = {
   {"type", cfun_node_type},
   {"start-byte", cfun_node_start_byte},
   {"end-byte", cfun_node_end_byte},
-  // XXX: wrap TSPoint?
-  {"start-point-row", cfun_node_start_point_row},
-  {"start-point-col", cfun_node_start_point_col},
-  //{"end-point-row", cfun_node_end_point_row},
-  {"end-point-col", cfun_node_end_point_col},
+  {"start-point", cfun_node_start_point},
+  {"end-point", cfun_node_end_point},
   {"is-named", cfun_node_is_named},
   {"has-error", cfun_node_has_error},
   {"parent", cfun_node_parent},
