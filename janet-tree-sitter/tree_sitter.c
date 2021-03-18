@@ -681,8 +681,18 @@ static Janet cfun_parser_parse(int32_t argc, Janet* argv) {
   janet_fixarity(argc, 3);
   Parser* parser = janet_getabstract(argv, 0, &jts_parser_type);
   TSParser* tsparser = parser->parser;
-  Tree* old_tree = janet_getabstract(argv, 1, &jts_tree_type);
-  TSTree* tstree = old_tree->tree;
+  TSTree* tstree;
+  Janet x = argv[1];
+  if (janet_checktype(x, JANET_ABSTRACT)) {
+    Tree* old_tree = janet_getabstract(argv, 1, &jts_tree_type);
+    tstree = old_tree->tree;
+  } else if (janet_checktype(x, JANET_NIL)) {
+    tstree = NULL;
+  } else {
+    // XXX: how to feedback problem?
+    return janet_wrap_nil();
+  }
+
   JanetArray* lines = janet_getarray(argv, 2);
 
   TSInput tsinput = (TSInput){.payload = (void*)lines,

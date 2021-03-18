@@ -96,3 +96,27 @@
   # => "x"
 
   )
+
+(comment
+
+  (def lines
+    @["(defn my-fn\n"
+      "  [x]\n"
+      "  (+ x 1))"])
+
+  (def src
+    (string/join lines ""))
+
+  (def p (tree-sitter/init "janet_simple"))
+
+  (def t (:parse p nil lines))
+
+  (def rn (:root-node t))
+
+  (:has-error rn)
+  # => false
+
+  (:text rn src)
+  # => src
+
+  )
