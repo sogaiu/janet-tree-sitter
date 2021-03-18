@@ -347,3 +347,49 @@
   # => "(:defn :my-fn\n  [x]\n  (+ x 1))"
 
   )
+
+# single-line indentation
+(comment
+
+  (def lines
+    @["(defn main\n"
+      "[& args]\n"
+      "1)"])
+
+  (def src
+    (string/join lines ""))
+
+  (def p (tree-sitter/init "janet_simple"))
+
+  (def t (:parse-string p src))
+
+  (def rn (:root-node t))
+
+  (:text rn src)
+  # => src
+
+  (:edit t
+         11 11 13
+         1 0
+         1 0
+         1 2)
+
+  (def edited-lines
+    @["(defn main\n"
+      "  [& args]\n"
+      "1)"])
+
+  (def new-t
+    (:parse p t edited-lines))
+
+  (:has-error (:root-node new-t))
+  # => false
+
+  (:get-changed-ranges t new-t)
+  # => nil
+
+  (:text (:root-node new-t)
+         (string/join edited-lines ""))
+  # => "(defn main\n  [& args]\n1)"
+
+)
