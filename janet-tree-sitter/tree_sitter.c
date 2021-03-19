@@ -82,7 +82,7 @@ const JanetAbstractType jts_parser_type = {
     JANET_ATEND_GET
 };
 
-////////
+//////// start cfun_ts_init ////////
 
 static Janet cfun_ts_init(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 2);
@@ -125,7 +125,7 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(parser);
 }
 
-////////
+//////// end cfun_ts_init ////////
 
 /**
  * Get the node's type as a null-terminated string.
