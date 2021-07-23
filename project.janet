@@ -1,5 +1,11 @@
 (import ./support/path)
 
+(declare-project
+  :name "janet-tree-sitter" # XXX: be nice to automated processing
+  :description "Janet bindings for Tree-sitter"
+  :url "https://gitlab.com/sogaiu/janet-tree-sitter"
+  :repo "git+https://gitlab.com/sogaiu/janet-tree-sitter")
+
 (def proj-name
   "janet-tree-sitter")
 
@@ -11,12 +17,6 @@
 
 (def src-root
   (path/join proj-root proj-dir-name))
-
-(declare-project
-  :name proj-name
-  :description "Janet bindings for Tree-sitter"
-  :url "https://gitlab.com/sogaiu/janet-tree-sitter"
-  :repo "git+https://gitlab.com/sogaiu/janet-tree-sitter")
 
 (declare-native
   :name "_tree-sitter"
