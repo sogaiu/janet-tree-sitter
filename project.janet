@@ -3,8 +3,8 @@
 (declare-project
   :name "janet-tree-sitter" # XXX: be nice to automated processing
   :description "Janet bindings for Tree-sitter"
-  :url "https://gitlab.com/sogaiu/janet-tree-sitter"
-  :repo "git+https://gitlab.com/sogaiu/janet-tree-sitter")
+  :url "https://github.com/sogaiu/janet-tree-sitter"
+  :repo "git+https://github.com/sogaiu/janet-tree-sitter")
 
 (def proj-name
   "janet-tree-sitter")
