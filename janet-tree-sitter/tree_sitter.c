@@ -384,6 +384,44 @@ static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet *argv) {
 }
 
 /**
+ * Get the node's first child that extends beyond the given byte offset.
+ */
+static Janet cfun_node_first_child_for_byte(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    // XXX: error checking?
+    Node *node = janet_getabstract(argv, 0, &jts_node_type);
+    // XXX: check for non-negative number?
+    uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+    Node *child =
+        (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+    // XXX: error checking?
+    child->node = ts_node_first_child_for_byte(node->node, idx);
+    if (ts_node_is_null(child->node)) {
+        return janet_wrap_nil();
+    }
+    return janet_wrap_abstract(child);
+}
+
+/**
+ * Get the node's first named child that extends beyond the given byte offset.
+ */
+static Janet cfun_node_first_named_child_for_byte(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    // XXX: error checking?
+    Node *node = janet_getabstract(argv, 0, &jts_node_type);
+    // XXX: check for non-negative number?
+    uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+    Node *child =
+        (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+    // XXX: error checking?
+    child->node = ts_node_first_named_child_for_byte(node->node, idx);
+    if (ts_node_is_null(child->node)) {
+        return janet_wrap_nil();
+    }
+    return janet_wrap_abstract(child);
+}
+
+/**
  * Check if two nodes are identical.
  */
 static Janet cfun_node_eq(int32_t argc, Janet *argv) {
@@ -462,6 +500,8 @@ static const JanetMethod node_methods[] = {
     {"prev-sibling", cfun_node_prev_sibling},
     {"descendant-for-byte-range", cfun_node_descendant_for_byte_range},
     {"descendant-for-point-range", cfun_node_descendant_for_point_range},
+    {"first-child-for-byte", cfun_node_first_child_for_byte},
+    {"first-named-child-for-byte", cfun_node_first_named_child_for_byte},
     {"eq", cfun_node_eq},
     // custom
     {"expr", cfun_node_expr},
