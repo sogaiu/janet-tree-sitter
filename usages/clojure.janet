@@ -16,45 +16,58 @@
   (def kn (:child (:child rn 0) 1))
 
   (:text kn src)
-  # => ":a"
+  # =>
+  ":a"
 
   (:is-named kn)
-  # => true
+  # =>
+  true
 
   (:type kn)
-  # => "kwd_lit"
+  # =>
+  "kwd_lit"
 
   (:expr kn)
-  # => "(kwd_lit)"
+  # =>
+  "(kwd_lit)"
 
   (:eq rn (:parent (:parent kn)))
-  # => true
+  # =>
+  true
 
   (:start-byte kn)
-  # => 1
-  
+  # =>
+  1
+
   (:end-byte kn)
-  # => 3
+  # =>
+  3
 
   (= (- (:end-byte kn) (:start-byte kn))
      (length (:text kn src)))
-  # => true
+  # =>
+  true
 
   (:eq kn (:prev-sibling (:next-sibling kn)))
-  # => true
+  # =>
+  true
 
   (:is-named (:prev-sibling kn))
-  # => false
+  # =>
+  false
 
   (:text (:prev-sibling kn) src)
-  # => "{"
+  # =>
+  "{"
 
   (def vn (:next-sibling (:next-sibling (:next-sibling kn))))
 
   (:type vn)
-  # => "vec_lit"
+  # =>
+  "vec_lit"
 
   (:expr vn)
-  # => "(vec_lit value: (kwd_lit) value: (kwd_lit) value: (kwd_lit))"
+  # =>
+  "(vec_lit value: (kwd_lit) value: (kwd_lit) value: (kwd_lit))"
 
   )

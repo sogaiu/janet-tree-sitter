@@ -11,89 +11,115 @@
   (def rn (:root-node t))
 
   (:has-error rn)
-  # => false
+  # =>
+  false
 
   (def pn (:child rn 0))
 
   (:child-count pn)
-  # => 6
+  # =>
+  6
 
   (:named-child-count pn)
-  # => 4
+  # =>
+  4
 
   (def sn (:child pn 1))
 
   (:eq sn (:named-child pn 0))
-  # => true
+  # =>
+  true
 
   (:eq sn (:descendant-for-byte-range rn 1 4))
-  # => true
+  # =>
+  true
 
   (:eq sn (:descendant-for-point-range rn 0 1 0 4))
-  # => true
+  # =>
+  true
 
   (:text sn src)
-  # => "defn"
+  # =>
+  "defn"
 
   (:is-named sn)
-  # => true
+  # =>
+  true
 
   (:type sn)
-  # => "sym_lit"
+  # =>
+  "sym_lit"
 
   (:expr sn)
-  # => "(sym_lit)"
+  # =>
+  "(sym_lit)"
 
   (:eq rn (:parent (:parent sn)))
-  # => true
+  # =>
+  true
 
   (:start-byte sn)
-  # => 1
+  # =>
+  1
 
   (:end-byte sn)
-  # => 5
+  # =>
+  5
 
   (length (:text sn src))
-  # => 4
+  # =>
+  4
 
   (= (- (:end-byte sn) (:start-byte sn))
      (length (:text sn src)))
-  # => true
+  # =>
+  true
 
   (:start-point sn)
-  # => [0 1]
+  # =>
+  [0 1]
 
   (:end-point sn)
-  # => [0 5]
+  # =>
+  [0 5]
 
   (:eq sn (:prev-sibling (:next-sibling sn)))
-  # => true
+  # =>
+  true
 
   (:is-named (:prev-sibling sn))
-  # => false
+  # =>
+  false
 
   (:text (:prev-sibling sn) src)
-  # => "("
+  # =>
+  "("
 
   (def sqtn (:next-sibling (:next-sibling sn)))
 
   (:eq sqtn (:descendant-for-byte-range rn 12 14))
-  # => true
+  # =>
+  true
 
   (:eq sqtn (:descendant-for-point-range rn 0 12 0 14))
-  # => true
+  # =>
+  true
 
   (:type sqtn)
-  # => "sqr_tup_lit"
+  # =>
+  "sqr_tup_lit"
 
   (:expr sqtn)
-  # => "(sqr_tup_lit (sym_lit))"
+  # =>
+  "(sqr_tup_lit (sym_lit))"
 
   (:text (:descendant-for-byte-range rn 13 13) src)
-  # => "x"
+  # =>
+  "x"
 
   (:text (:descendant-for-point-range rn 0 13 0 13) src)
-  # => "x"
+  # =>
+  "x"
 
   )
 
@@ -116,9 +142,11 @@
   (def rn (:root-node t))
 
   (:has-error rn)
-  # => false
+  # =>
+  false
 
   (:text rn src)
-  # => src
+  # =>
+  src
 
   )

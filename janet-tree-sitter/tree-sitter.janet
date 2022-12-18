@@ -31,19 +31,22 @@
     (and (string/has-prefix? "clojure" base)
          (or (string/has-suffix? ".so" base)
              (string/has-suffix? ".dll" base))))
-  # => true
+  # =>
+  true
 
   (let [base (path/basename (lang-name-to-path "janet_simple"))]
     (and (string/has-prefix? "janet_simple" base)
          (or (string/has-suffix? ".so" base)
              (string/has-suffix? ".dll" base))))
-  # => true
+  # =>
+  true
 
   (let [base (path/basename (lang-name-to-path "janet-simple"))]
     (and (string/has-prefix? "janet_simple" base)
          (or (string/has-suffix? ".so" base)
              (string/has-suffix? ".dll" base))))
-  # => true
+  # =>
+  true
 
   )
 
@@ -57,13 +60,16 @@
 (comment
 
   (lang-name-to-fn-name "clojure")
-  # => "tree_sitter_clojure"
+  # =>
+  "tree_sitter_clojure"
 
   (lang-name-to-fn-name "janet_simple")
-  # => "tree_sitter_janet_simple"
+  # =>
+  "tree_sitter_janet_simple"
 
   (lang-name-to-fn-name "janet-simple")
-  # => "tree_sitter_janet_simple"
+  # =>
+  "tree_sitter_janet_simple"
 
   )
 
@@ -91,7 +97,8 @@
              t (:parse-string p src)
              rn (:root-node t)]
     (:text rn src))
-  # => src
+  # =>
+  src
 
   (when-let [p (try
                  (init "janet-simple")
@@ -101,6 +108,7 @@
              t (:parse-string p src)
              rn (:root-node t)]
     (:text rn src))
-  # => src
+  # =>
+  src
 
   )

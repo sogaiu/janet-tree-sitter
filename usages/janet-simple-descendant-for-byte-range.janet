@@ -17,24 +17,31 @@
   (def rn (:root-node t))
 
   (:text (:descendant-for-byte-range rn 0 0) src)
-  # => "("
+  # =>
+  "("
 
   (:text (:descendant-for-byte-range rn 0 1) src)
-  # => "("
+  # =>
+  "("
 
   (:text (:descendant-for-byte-range rn 14 14) src)
-  # => "["
+  # =>
+  "["
 
   (:text (:descendant-for-byte-range rn 14 15) src)
-  # => "["
+  # =>
+  "["
 
   (:text (:descendant-for-byte-range rn 14 16) src)
-  # => "[x]"
+  # =>
+  "[x]"
 
   (:text (:descendant-for-byte-range rn 14 17) src)
-  # => "[x]"
+  # =>
+  "[x]"
   
   (:text (:descendant-for-byte-range rn 13 17) src)
-  # => src
+  # =>
+  src
 
   )
