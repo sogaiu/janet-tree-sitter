@@ -1,18 +1,3 @@
-* create README
-  * uses git submodules, clone with --recursive
-  * prerequisites
-    * janet / jpm
-    * one or more relevant tree-sitter grammars installed
-      * grammars need npm and python versions of some sort to be built
-  * test issues
-    * won't work without tree-sitter grammars for:
-      * clojure
-      * janet-simple
-  * credits
-    * bakpakin - pieces of janet, path.janet
-    * pyrmont - discussion
-    * Saikyun - discussion and text-experiment
-
 * valgrind
   * invocation command(s):
   valgrind --tool=memcheck --track-origins=yes --trace-children=yes --dsymutil=yes --leak-check=full --show-leak-kinds=all janet usages/clojure.janet
