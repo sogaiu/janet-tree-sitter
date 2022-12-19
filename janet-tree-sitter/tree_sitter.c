@@ -191,6 +191,22 @@ static Janet cfun_node_end_point(int32_t argc, Janet *argv) {
 }
 
 /**
+ * Check if the node is null. Functions like `ts_node_child` and
+ * `ts_node_next_sibling` will return a null node to indicate that no such node
+ * was found.
+ */
+static Janet cfun_node_is_null(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    // XXX: error checking?
+    Node *node = janet_getabstract(argv, 0, &jts_node_type);
+    if (ts_node_is_null(node->node)) {
+        return janet_wrap_true();
+    } else {
+        return janet_wrap_false();
+    }
+}
+
+/**
  * Check if the node is *named*. Named nodes correspond to named rules in the
  * grammar, whereas *anonymous* nodes correspond to string literals in the
  * grammar.
@@ -489,6 +505,7 @@ static const JanetMethod node_methods[] = {
     {"end-byte", cfun_node_end_byte},
     {"start-point", cfun_node_start_point},
     {"end-point", cfun_node_end_point},
+    {"is-null", cfun_node_is_null},
     {"is-named", cfun_node_is_named},
     {"has-error", cfun_node_has_error},
     {"parent", cfun_node_parent},
