@@ -660,6 +660,16 @@ static int jts_tree_get(void *p, Janet key, Janet *out) {
 
 ////////
 
+static Janet cfun_parser_delete(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
+    TSParser *tsparser = parser->parser;
+
+    ts_parser_delete(tsparser);
+
+    return janet_wrap_nil();
+}
+
 /* static Janet cfun_parser_set_language(int32_t argc, Janet* argv) { */
 
 /* } */
@@ -776,6 +786,7 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
 }
 
 static const JanetMethod parser_methods[] = {
+    {"delete", cfun_parser_delete},
     //  {"set-language", cfun_parser_set_language},
     //  {"language", cfun_parser_language},
     {"parse-string", cfun_parser_parse_string},
@@ -790,7 +801,8 @@ static int jts_parser_gc(void *p, size_t size) {
     Parser *parser = (Parser *)p;
     if (parser) {
         if (NULL != parser->parser) {
-            free(parser->parser);
+            ts_parser_delete(parser->parser);
+            //free(parser->parser);
             parser->parser = NULL;
         }
     }
