@@ -660,7 +660,8 @@ static int jts_tree_gc(void *p, size_t size) {
     Tree *tree = (Tree *)p;
     if (tree) {
         if (NULL != tree->tree) {
-            free(tree->tree);
+            ts_tree_delete(tree->tree);
+            //free(tree->tree);
             tree->tree = NULL;
         }
     }
