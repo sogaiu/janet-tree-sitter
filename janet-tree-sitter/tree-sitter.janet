@@ -21,6 +21,9 @@
     (case (os/which)
       :windows
       ".dll"
+      :macos
+      ".dylib"
+      #
       ".so"))
   (path/join bin-dir
              (string lang-name-norm ext)))
