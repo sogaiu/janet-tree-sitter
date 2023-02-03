@@ -191,11 +191,10 @@
 
 (comment
 
-  (def res
-    (let [buf @""]
-      (with-dyns [:out buf]
-        (print-s-expr "(def a 1)" "clojure")
-        (string buf))))
+  (let [buf @""]
+    (with-dyns [:out buf]
+      (print-s-expr "(def a 1)" "clojure")
+      (string buf)))
   # =>
   ``
   (source [0, 0] - [0, 9]
