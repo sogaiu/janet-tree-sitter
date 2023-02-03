@@ -83,10 +83,12 @@
   `clojure` or `janet_simple`.
 
   ``
-  [lang-name]
-  (when-let [path (lang-name-to-path lang-name)
-             fn-name (lang-name-to-fn-name lang-name)]
-    (_tree-sitter/_init path fn-name)))
+  [lang-name &opt so-path]
+  (def fn-name
+    (lang-name-to-fn-name lang-name))
+  (default so-path
+    (lang-name-to-path lang-name))
+  (_tree-sitter/_init so-path fn-name))
 
 (comment
 
