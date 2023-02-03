@@ -207,3 +207,121 @@
   ``
 
   )
+
+(defn search-dfs
+  [root-node pred-fn &opt named-only? depth-limit]
+  (default named-only? true)
+  (default depth-limit 500)
+  (var target nil)
+  #
+  (defn helper
+    [root pred &opt named limit]
+    #
+    (def node root)
+    #
+    (when (pred node)
+      (set target node)
+      (break true))
+    #
+    (when (neg? limit)
+      (break false))
+    #
+    (def count
+      (if named
+        (:named-child-count node)
+        (:child-count node)))
+    (var idx 0)
+    (var done false)
+    (while (and (not done)
+                (< idx count))
+      (def child
+        (if named
+          (:named-child node idx)
+          (:child node idx)))
+      (if (and child
+               (not (:is-null child))
+               (helper child pred named (dec limit)))
+        # XXX: unwinding here?
+        (set done true)
+        (++ idx)))
+    #
+    done)
+  #
+  (when (helper root-node pred-fn named-only? depth-limit)
+    target))
+
+(comment
+
+  (def src
+    ``
+    (def my-fn
+      [x]
+      (+ x 1
+           (/ 6 3)))
+    ``)
+
+  (when-let [p (try
+                 (init "janet-simple")
+                 ([err]
+                   (eprint err)
+                   nil))
+             t (:parse-string p src)
+             rn (:root-node t)
+             target (search-dfs rn
+                                (fn [node]
+                                  (and (= (:type node)
+                                          "sym_lit")
+                                       (= (:text node src)
+                                          "+"))))]
+    (when target
+      [(:type target)
+       (:text target src)
+       (:start-byte target)
+       (:end-byte target)]))
+  # =>
+  ["sym_lit" "+" 20 21]
+
+  (when-let [p (try
+                 (init "janet-simple")
+                 ([err]
+                   (eprint err)
+                   nil))
+             t (:parse-string p src)
+             rn (:root-node t)
+             target (search-dfs rn
+                                (fn [node]
+                                  (and (= (:type node)
+                                          "num_lit")
+                                       (= (:text node src)
+                                          "3"))))]
+    (when target
+      [(:type target)
+       (:text target src)
+       (:start-byte target)
+       (:end-byte target)]))
+  # =>
+  ["num_lit" "3" 38 39]
+
+  (when-let [p (try
+                 (init "janet-simple")
+                 ([err]
+                   (eprint err)
+                   nil))
+             t (:parse-string p src)
+             rn (:root-node t)
+             target (search-dfs rn
+                                (fn [node]
+                                  (and (= (:type node)
+                                          "num_lit")
+                                       (= (:text node src)
+                                          "2"))))]
+    (when target
+      [(:type target)
+       (:text target src)
+       (:start-byte target)
+       (:end-byte target)]))
+  # =>
+  nil
+
+  )
+
