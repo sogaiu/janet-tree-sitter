@@ -122,3 +122,89 @@
   "Return new cursor for `node`."
   [node]
   (_tree-sitter/_cursor node))
+
+(defn print-s-expr
+  ``
+  Print s-expression representation of `src`.
+
+  `src` should be a string in language `lang-name`.
+
+  Optional arg `so-path` is a path to a parser shared object.
+  ``
+  [src lang-name &opt so-path]
+  (def p
+    (init lang-name so-path))
+  (assert p "Parser init failed")
+  #
+  (def t (:parse-string p src))
+  (def rn (:root-node t))
+  (def curs (cursor rn))
+  #
+  (var needs-nl nil)
+  (var indent-lvl 0)
+  (var visited-kids? nil)
+  #
+  (while true
+    (def node (:node curs))
+    (def named? (:is-named node))
+    (if visited-kids?
+      (do
+        (when named?
+          (prin ")")
+          (set needs-nl true))
+        (cond
+          (:go-next-sibling curs)
+          (set visited-kids? false)
+          #
+          (:go-parent curs)
+          (do
+            (set visited-kids? true)
+            (-- indent-lvl))
+          #
+          (break)))
+      (do
+        (when named?
+          (when needs-nl
+            (print))
+          (for i 0 indent-lvl
+            (prin "  "))
+          (def [start-row start-col]
+            (:start-point node))
+          (def [end-row end-col]
+            (:end-point node))
+          (def field-name
+            (:field-name curs))
+          (when field-name
+            (prinf "%s: " field-name))
+          (prinf "(%s [%d, %d] - [%d, %d]"
+                 (:type node)
+                 start-row
+                 start-col
+                 end-row
+                 end-col)
+          (set needs-nl true))
+        (if (:go-first-child curs)
+          (do
+            (set visited-kids? false)
+            (++ indent-lvl))
+          (set visited-kids? true))))))
+
+(comment
+
+  (def res
+    (let [buf @""]
+      (with-dyns [:out buf]
+        (print-s-expr "(def a 1)" "clojure")
+        (string buf))))
+  # =>
+  ``
+  (source [0, 0] - [0, 9]
+    (list_lit [0, 0] - [0, 9]
+      value: (sym_lit [0, 1] - [0, 4]
+        name: (sym_name [0, 1] - [0, 4]))
+      value: (sym_lit [0, 5] - [0, 6]
+        name: (sym_name [0, 5] - [0, 6]))
+      value: (num_lit [0, 7] - [0, 8])))
+  ``
+
+  )
