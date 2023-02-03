@@ -833,6 +833,45 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(tree);
 }
 
+// XXX: haven't implemented this general thing yet
+/**
+ * Set the logger that a parser should use during parsing.
+ *
+ * The parser does not take ownership over the logger payload. If a logger was
+ * previously assigned, the caller is responsible for releasing any memory
+ * owned by the previous logger.
+ */
+//void ts_parser_set_logger(TSParser *self, TSLogger logger);
+
+void log_to_stderr(void *payload, TSLogType type, const char *message) {
+    fprintf(stderr, "%s\n", message);
+}
+
+static Janet cfun_parser_log_to_stderr(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
+    TSParser *tsparser = parser->parser;
+
+    TSLogger logger = {tsparser, log_to_stderr};
+
+    ts_parser_set_logger(tsparser, logger);
+
+    return janet_wrap_nil();
+}
+
+/**
+ * Get the parser's current logger.
+ */
+//TSLogger ts_parser_logger(const TSParser *self);
+
+/**
+ * Set the file descriptor to which the parser should write debugging graphs
+ * during parsing. The graphs are formatted in the DOT language. You may want
+ * to pipe these graphs directly to a `dot(1)` process in order to generate
+ * SVG output. You can turn off this logging by passing a negative number.
+ */
+//void ts_parser_print_dot_graphs(TSParser *self, int file);
+
 static const JanetMethod parser_methods[] = {
     {"delete", cfun_parser_delete},
     //  {"set-language", cfun_parser_set_language},
@@ -841,6 +880,10 @@ static const JanetMethod parser_methods[] = {
     {"parse", cfun_parser_parse},
     //  {"set-included-ranges", cfun_parser_set_included_ranges},
     //  {"included-ranges", cfun_parser_included_ranges},
+    //{"set-logger", cfun_parser_set_logger},
+    {"log-to-stderr", cfun_parser_log_to_stderr},
+    //{"logger", cfun_parser_logger},
+    //{"print-dot-graphs", cfun_parser_print_dot_graphs},
     {NULL, NULL}
 };
 
