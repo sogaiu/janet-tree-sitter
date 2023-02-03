@@ -1014,8 +1014,6 @@ static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
     return janet_cstringv(name);
 }
 
-const char *ts_tree_cursor_current_field_name(const TSTreeCursor *);
-
 static const JanetMethod cursor_methods[] = {
     {"go-parent", cfun_cursor_goto_parent},
     {"go-next-sibling", cfun_cursor_goto_next_sibling},
