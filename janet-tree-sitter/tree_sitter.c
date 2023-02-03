@@ -151,6 +151,11 @@ static Janet cfun_node_type(int32_t argc, Janet *argv) {
     Node *node = (Node *)janet_getabstract(argv, 0, &jts_node_type);
     // XXX: error checking?
     const char *the_type = ts_node_type(node->node);
+    if (!the_type) {
+        // XXX: is this appropriate handling?
+        return janet_wrap_nil();
+    }
+
     return janet_cstringv(the_type);
 }
 
@@ -474,8 +479,12 @@ static Janet cfun_node_expr(int32_t argc, Janet *argv) {
     // XXX: error checking?
     Node *node = janet_getabstract(argv, 0, &jts_node_type);
     char *text = ts_node_string(node->node);
-    // janet_cstring seems to help with not ending up with extra stuff at end
-    return janet_wrap_string(janet_cstring(text));
+    if (!text) {
+        // XXX: is this appropriate handling?
+        return janet_wrap_nil();
+    }
+
+    return janet_cstringv(text);
 }
 
 static Janet cfun_node_tree(int32_t argc, Janet *argv) {
@@ -498,6 +507,10 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
     Node *node = janet_getabstract(argv, 0, &jts_node_type);
 
     const char *source = (const char *)janet_getstring(argv, 1);
+    if (!source) {
+        // XXX: is this appropriate handling?
+        return janet_wrap_nil();
+    }
 
     uint32_t start = ts_node_start_byte(node->node);
     uint32_t end = ts_node_end_byte(node->node);
@@ -513,7 +526,7 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
     strncpy(text, source + start, len);
     text[len] = '\0';
 
-    return janet_wrap_string(janet_cstring(text));
+    return janet_cstringv(text);
 }
 
 static const JanetMethod node_methods[] = {
@@ -993,6 +1006,11 @@ static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
     Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
     // XXX: error-checking?
     const char *name = ts_tree_cursor_current_field_name(&(cursor->cursor));
+    if (!name) {
+        // XXX: is this appropriate handling?
+        return janet_wrap_nil();
+    }
+
     return janet_cstringv(name);
 }
 
