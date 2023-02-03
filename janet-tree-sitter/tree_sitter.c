@@ -843,16 +843,16 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
  */
 //void ts_parser_set_logger(TSParser *self, TSLogger logger);
 
-void log_to_stderr(void *payload, TSLogType type, const char *message) {
-    fprintf(stderr, "%s\n", message);
+void log_by_eprint(void *payload, TSLogType type, const char *message) {
+    janet_eprintf("%s", message);
 }
 
-static Janet cfun_parser_log_to_stderr(int32_t argc, Janet *argv) {
+static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
     TSParser *tsparser = parser->parser;
 
-    TSLogger logger = {tsparser, log_to_stderr};
+    TSLogger logger = {tsparser, log_by_eprint};
 
     ts_parser_set_logger(tsparser, logger);
 
@@ -881,7 +881,7 @@ static const JanetMethod parser_methods[] = {
     //  {"set-included-ranges", cfun_parser_set_included_ranges},
     //  {"included-ranges", cfun_parser_included_ranges},
     //{"set-logger", cfun_parser_set_logger},
-    {"log-to-stderr", cfun_parser_log_to_stderr},
+    {"log-by-eprint", cfun_parser_log_by_eprint},
     //{"logger", cfun_parser_logger},
     //{"print-dot-graphs", cfun_parser_print_dot_graphs},
     {NULL, NULL}

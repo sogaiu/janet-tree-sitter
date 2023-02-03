@@ -148,3 +148,29 @@
   "[:x :y :z]"
 
   )
+
+(comment
+
+  (def src "[:x :y :z]")
+
+  (def p (tree-sitter/init "clojure"))
+
+  (assert p "Parser init failed")
+
+  (:log-by-eprint p)
+
+  (def res
+    (let [buf @""]
+      (with-dyns [:err buf]
+        (:parse-string p src)
+        (string buf))))
+
+  (string/has-prefix? "new_parse" res)
+  # =>
+  true
+
+  (string/has-suffix? "acceptdone" res)
+  # =>
+  true
+
+  )
