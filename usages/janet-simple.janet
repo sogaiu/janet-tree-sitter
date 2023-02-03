@@ -6,6 +6,8 @@
 
   (def p (tree-sitter/init "janet_simple"))
 
+  (assert p "Parser init failed")
+
   (def t (:parse-string p src))
 
   (def rn (:root-node t))
@@ -136,6 +138,8 @@
     (string/join lines ""))
 
   (def p (tree-sitter/init "janet_simple"))
+
+  (assert p "Parser init failed")
 
   (def t (:parse p nil lines))
 

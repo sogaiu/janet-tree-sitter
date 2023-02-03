@@ -6,6 +6,8 @@
 
   (def p (tree-sitter/init "clojure"))
 
+  (assert p "Parser init failed")
+
   (def t (:parse-string p src))
 
   (def rn (:root-node t))
