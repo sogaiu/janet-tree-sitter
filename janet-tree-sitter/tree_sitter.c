@@ -1021,8 +1021,8 @@ static const JanetMethod cursor_methods[] = {
     {"go-next-sibling", cfun_cursor_goto_next_sibling},
     {"go-first-child", cfun_cursor_goto_first_child},
     {"reset", cfun_cursor_reset},
-    {"current-node", cfun_cursor_current_node},
-    {"current-field-name", cfun_cursor_current_field_name},
+    {"node", cfun_cursor_current_node},
+    {"field-name", cfun_cursor_current_field_name},
     {NULL, NULL}
 };
 

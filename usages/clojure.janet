@@ -91,7 +91,7 @@
 
   (def c (tree-sitter/cursor rn))
 
-  (:expr (:current-node c))
+  (:expr (:node c))
   # =>
   (string "(source "
           "(vec_lit "
@@ -107,7 +107,7 @@
   # =>
   true
 
-  (:text (:current-node c) src)
+  (:text (:node c) src)
   # =>
   "["
 
@@ -115,7 +115,7 @@
   # =>
   true
 
-  (:text (:current-node c) src)
+  (:text (:node c) src)
   # =>
   "[:x :y :z]"
 
@@ -135,7 +135,7 @@
   # =>
   true
 
-  (:text (:current-node c) src)
+  (:text (:node c) src)
   # =>
   ":z"
 
@@ -143,7 +143,7 @@
   # =>
   nil
 
-  (:text (:current-node c) src)
+  (:text (:node c) src)
   # =>
   "[:x :y :z]"
 
