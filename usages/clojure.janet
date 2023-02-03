@@ -75,3 +75,74 @@
 
   )
 
+(comment
+
+  (def src "[:x :y :z]")
+
+  (def p (tree-sitter/init "clojure"))
+
+  (assert p "Parser init failed")
+
+  (def t (:parse-string p src))
+
+  (def rn (:root-node t))
+
+  (def c (tree-sitter/cursor rn))
+
+  (:expr (:current-node c))
+  # =>
+  (string "(source "
+          "(vec_lit "
+          "value: (kwd_lit name: (kwd_name)) "
+          "value: (kwd_lit name: (kwd_name)) "
+          "value: (kwd_lit name: (kwd_name))))")
+
+  (:go-first-child c)
+  # =>
+  true
+
+  (:go-first-child c)
+  # =>
+  true
+
+  (:text (:current-node c) src)
+  # =>
+  "["
+
+  (:go-parent c)
+  # =>
+  true
+
+  (:text (:current-node c) src)
+  # =>
+  "[:x :y :z]"
+
+  (:go-first-child c)
+  # =>
+  true
+
+  (:go-next-sibling c)
+  # =>
+  true
+
+  (:go-next-sibling c)
+  # =>
+  true
+
+  (:go-next-sibling c)
+  # =>
+  true
+
+  (:text (:current-node c) src)
+  # =>
+  ":z"
+
+  (:reset c rn)
+  # =>
+  nil
+
+  (:text (:current-node c) src)
+  # =>
+  "[:x :y :z]"
+
+  )

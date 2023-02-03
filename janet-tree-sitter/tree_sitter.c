@@ -48,6 +48,10 @@ typedef struct {
     TSParser *parser;
 } Parser;
 
+typedef struct {
+    TSTreeCursor cursor;
+} Cursor;
+
 static int jts_node_get(void *p, Janet key, Janet *out);
 
 const JanetAbstractType jts_node_type = {
@@ -79,6 +83,18 @@ const JanetAbstractType jts_parser_type = {
     jts_parser_gc,
     NULL,
     jts_parser_get,
+    JANET_ATEND_GET
+};
+
+static int jts_cursor_gc(void *p, size_t size);
+
+static int jts_cursor_get(void *p, Janet key, Janet *out);
+
+const JanetAbstractType jts_cursor_type = {
+    "tree-sitter/cursor",
+    jts_cursor_gc,
+    NULL,
+    jts_cursor_get,
     JANET_ATEND_GET
 };
 
@@ -835,6 +851,185 @@ static int jts_parser_get(void *p, Janet key, Janet *out) {
     return janet_getmethod(janet_unwrap_keyword(key), parser_methods, out);
 }
 
+////////
+
+/**
+ * Create a new tree cursor starting from the given node.
+ *
+ * A tree cursor allows you to walk a syntax tree more efficiently than is
+ * possible using the `TSNode` functions. It is a mutable object that is always
+ * on a certain syntax node, and can be moved imperatively to different nodes.
+ */
+static Janet cfun_cursor_new(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    Node *node = janet_getabstract(argv, 0, &jts_node_type);
+    if (ts_node_is_null(node->node)) {
+        fprintf(stderr, "node was null");
+        return janet_wrap_nil();
+    }
+
+    TSTreeCursor c = ts_tree_cursor_new(node->node);
+    // XXX: can't fail?
+
+    Cursor *cursor =
+        (Cursor *)janet_abstract(&jts_cursor_type, sizeof(Cursor));
+    cursor->cursor = c;
+
+    return janet_wrap_abstract(cursor);
+}
+
+/**
+ * Move the cursor to the parent of its current node.
+ *
+ * This returns `true` if the cursor successfully moved, and returns `false`
+ * if there was no parent node (the cursor was already on the root node).
+ */
+static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+    // XXX: error-checking?
+
+    if (ts_tree_cursor_goto_parent(&(cursor->cursor))) {
+      return janet_wrap_true();
+    } else {
+      return janet_wrap_false();
+    }
+}
+
+/**
+ * Move the cursor to the next sibling of its current node.
+ *
+ * This returns `true` if the cursor successfully moved, and returns `false`
+ * if there was no next sibling node.
+ */
+static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+    // XXX: error-checking?
+
+    if (ts_tree_cursor_goto_next_sibling(&(cursor->cursor))) {
+      return janet_wrap_true();
+    } else {
+      return janet_wrap_false();
+    }
+}
+
+/**
+ * Move the cursor to the first child of its current node.
+ *
+ * This returns `true` if the cursor successfully moved, and returns `false`
+ * if there were no children.
+ */
+static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+    // XXX: error-checking?
+
+    if (ts_tree_cursor_goto_first_child(&(cursor->cursor))) {
+      return janet_wrap_true();
+    } else {
+      return janet_wrap_false();
+    }
+}
+
+/**
+ * Re-initialize a tree cursor to start at a different node.
+ */
+static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+
+    Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+    // XXX: error-checking?
+
+    Node *node = janet_getabstract(argv, 1, &jts_node_type);
+    if (ts_node_is_null(node->node)) {
+        fprintf(stderr, "node was null");
+        return janet_wrap_nil();
+    }
+
+    ts_tree_cursor_reset(&(cursor->cursor), node->node);
+
+    // XXX: better to return true?
+    return janet_wrap_nil();
+}
+
+/**
+ * Get the tree cursor's current node.
+ */
+static Janet cfun_cursor_current_node(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+    // XXX: error-checking?
+
+    Node *n =
+        (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+    // XXX: error checking?
+
+    n->node = ts_tree_cursor_current_node(&(cursor->cursor));
+
+    // XXX: is this appropriate checking?
+    if (ts_node_is_null(n->node)) {
+        return janet_wrap_nil();
+    }
+
+    return janet_wrap_abstract(n);
+}
+
+/**
+ * Get the field name of the tree cursor's current node.
+ *
+ * This returns `NULL` if the current node doesn't have a field.
+ * See also `ts_node_child_by_field_name`.
+ */
+static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+    // XXX: error-checking?
+    const char *name = ts_tree_cursor_current_field_name(&(cursor->cursor));
+    return janet_cstringv(name);
+}
+
+const char *ts_tree_cursor_current_field_name(const TSTreeCursor *);
+
+static const JanetMethod cursor_methods[] = {
+    {"go-parent", cfun_cursor_goto_parent},
+    {"go-next-sibling", cfun_cursor_goto_next_sibling},
+    {"go-first-child", cfun_cursor_goto_first_child},
+    {"reset", cfun_cursor_reset},
+    {"current-node", cfun_cursor_current_node},
+    {"current-field-name", cfun_cursor_current_field_name},
+    {NULL, NULL}
+};
+
+static int jts_cursor_gc(void *p, size_t size) {
+    (void) size;
+    Cursor *cursor = (Cursor *)p;
+    if (cursor) {
+        if (NULL != &(cursor->cursor)) {
+            ts_tree_cursor_delete(&(cursor->cursor));
+            // XXX: ?
+            //&(cursor->cursor) = NULL;
+        }
+    }
+    return 0;
+}
+
+static int jts_cursor_get(void *p, Janet key, Janet *out) {
+    (void) p;
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        return 0;
+    }
+    return janet_getmethod(janet_unwrap_keyword(key), cursor_methods, out);
+}
+
+////////
+
 static const JanetReg cfuns[] = {
     {
         "_init", cfun_ts_init,
@@ -844,12 +1039,19 @@ static const JanetReg cfuns[] = {
         "`fn-name` is the grammar init function name as a string, e.g.\n"
         "`tree_sitter_clojure` or `tree_sitter_janet_simple`."
     },
+    {
+        "_cursor", cfun_cursor_new,
+        "(_tree-sitter/_cursor node)\n\n"
+        "Return new cursor for node.\n"
+    },
     {NULL, NULL, NULL}
 };
 
 JANET_MODULE_ENTRY(JanetTable *env) {
+    janet_register_abstract_type(&jts_cursor_type);
     janet_register_abstract_type(&jts_parser_type);
     janet_register_abstract_type(&jts_tree_type);
     janet_register_abstract_type(&jts_node_type);
     janet_cfuns(env, "tree-sitter", cfuns);
 }
+

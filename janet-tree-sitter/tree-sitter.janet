@@ -117,3 +117,8 @@
   src
 
   )
+
+(defn cursor
+  "Return new cursor for `node`."
+  [node]
+  (_tree-sitter/_cursor node))
