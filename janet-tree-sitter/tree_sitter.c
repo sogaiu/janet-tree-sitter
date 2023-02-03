@@ -91,7 +91,7 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
     Clib lib = load_clib(path);
     if (!lib) {
-        fprintf(stderr, error_clib());
+        fprintf(stderr, "%s", error_clib());
         return janet_wrap_nil();
     }
 
