@@ -29,7 +29,7 @@
 
   (:expr kn)
   # =>
-  "(kwd_lit)"
+  "(kwd_lit name: (kwd_name))"
 
   (:eq rn (:parent (:parent kn)))
   # =>
@@ -68,7 +68,10 @@
 
   (:expr vn)
   # =>
-  "(vec_lit value: (kwd_lit) value: (kwd_lit) value: (kwd_lit))"
+  (string "(vec_lit "
+          "value: (kwd_lit name: (kwd_name)) "
+          "value: (kwd_lit name: (kwd_name)) "
+          "value: (kwd_lit name: (kwd_name)))")
 
   )
 
