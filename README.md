@@ -17,12 +17,14 @@ jpm install
 
 ## Usage Example
 
-```janet
-(import janet-tree-sitter/tree-sitter)
+### Basic
 
+```janet
 (def src "{:a 1 :b [:x :y :z]}")
 
 (def p (tree-sitter/init "clojure"))
+
+(assert p "Parser init failed")
 
 (def t (:parse-string p src))
 
@@ -47,7 +49,7 @@ true
 
 (:expr kn)
 # =>
-"(kwd_lit)"
+"(kwd_lit name: (kwd_name))"
 
 (:eq rn (:parent (:parent kn)))
 # =>
@@ -86,7 +88,82 @@ false
 
 (:expr vn)
 # =>
-"(vec_lit value: (kwd_lit) value: (kwd_lit) value: (kwd_lit))"
+(string "(vec_lit "
+        "value: (kwd_lit name: (kwd_name)) "
+        "value: (kwd_lit name: (kwd_name)) "
+        "value: (kwd_lit name: (kwd_name)))")
+```
+
+### Cursor
+
+```janet
+(def src "[:x :y :z]")
+
+(def p (tree-sitter/init "clojure"))
+
+(assert p "Parser init failed")
+
+(def t (:parse-string p src))
+
+(def rn (:root-node t))
+
+(def c (tree-sitter/cursor rn))
+
+(:expr (:node c))
+# =>
+(string "(source "
+        "(vec_lit "
+        "value: (kwd_lit name: (kwd_name)) "
+        "value: (kwd_lit name: (kwd_name)) "
+        "value: (kwd_lit name: (kwd_name))))")
+
+(:go-first-child c)
+# =>
+true
+
+(:go-first-child c)
+# =>
+true
+
+(:text (:node c) src)
+# =>
+"["
+
+(:go-parent c)
+# =>
+true
+
+(:text (:node c) src)
+# =>
+"[:x :y :z]"
+
+(:go-first-child c)
+# =>
+true
+
+(:go-next-sibling c)
+# =>
+true
+
+(:go-next-sibling c)
+# =>
+true
+
+(:go-next-sibling c)
+# =>
+true
+
+(:text (:node c) src)
+# =>
+":z"
+
+(:reset c rn)
+# =>
+nil
+
+(:text (:node c) src)
+# =>
+"[:x :y :z]"
 ```
 
 ## Issues
