@@ -503,6 +503,7 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
     uint32_t end = ts_node_end_byte(node->node);
 
     size_t len = end - start;
+    // XXX: should we be doing this copying?
     char *text = (char *)malloc(len + 1);
     if (NULL == text) {
         fprintf(stderr, "out of memory\n");
