@@ -207,4 +207,19 @@
   # =>
   true
 
+  (:next-match qc)
+
+  (:next-match qc)
+
+  (def [_ _ [[_ sym-node]]]
+    (:next-match qc))
+
+  (:text sym-node src)
+  # =>
+  "def"
+
+  [(:start-byte sym-node) (:end-byte sym-node)]
+  # =>
+  [1 4]
+
   )
