@@ -218,7 +218,9 @@ true
 ## Issues
 
 * To run all tests successfully, appropriate tree-sitter grammars for
-  clojure and janet-simple need to be installed.
+  [clojure](https://github.com/sogaiu/tree-sitter-clojure) and
+  [janet-simple](https://github.com/sogaiu/tree-sitter-janet-simple)
+  need to be installed.
 
 ## Credits
 
