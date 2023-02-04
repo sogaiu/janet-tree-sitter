@@ -187,7 +187,8 @@
           (do
             (set visited-kids? false)
             (++ indent-lvl))
-          (set visited-kids? true))))))
+          (set visited-kids? true)))))
+  (print))
 
 (comment
 
