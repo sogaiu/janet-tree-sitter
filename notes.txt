@@ -1,18 +1,121 @@
+* why is there a seg fault when exiting repl that uses this?
+
+* handling freeing of parser ok?
+
+* nicer if cfun_parser_parse_string can handle buffers as input?
+
+* consider making functions like those in jaylib (XXX: what's the benefit?):
+
+  e.g. for:
+
+static const JanetAbstractType AT_Font = {
+    "jaylib/font",
+    JANET_ATEND_NAME
+};
+
+  this is convenient:
+
+static Font *jaylib_getfont(const Janet *argv, int32_t n) {
+    return ((Font *)janet_getabstract(argv, n, &AT_Font));
+}
+
+  so for our case:
+
+    Node *node = (Node *)janet_getabstract(argv, 0, &jts_node_type);
+
+
+  could be replaced by:
+
+    Node *node = jts_getnode(argv, 0);
+
+  where jts_getnode is defined by:
+
+    Node *jts_getnode(const Janet *argv, int32_t n) {
+        return ((Node *)janet_getabstract(argv, n, &jts_node_type));
+    }
+
+  and there is already the definition:
+
+const JanetAbstractType jts_node_type = {
+    "tree-sitter/node",
+    NULL,
+    NULL,
+    jts_node_get,
+    JANET_ATEND_GET
+};
+
+* figure out how to get debug output from parsing
+  * --debug-graph
+  * --debug
+    * figure out how to make logging more generic
+    * figure out how to arrange for janet to capture stderr
+
+* understand the following warnings and implications:
+
+$ jpm test
+compiling tree-sitter/lib/src/lib.c to build/tree-sitter___lib___src___lib.o...
+generating meta file build/_tree-sitter.meta.janet...
+compiling janet-tree-sitter/tree_sitter.c to build/janet-tree-sitter___tree_sitter.o...
+janet-tree-sitter/tree_sitter.c: In function ‘cfun_node_tree’:
+janet-tree-sitter/tree_sitter.c:498:16: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  498 |     tree->tree = (node->node).tree;
+      |                ^
+compiling janet-tree-sitter/tree_sitter.c to build/janet-tree-sitter___tree_sitter.static.o...
+janet-tree-sitter/tree_sitter.c: In function ‘cfun_node_tree’:
+janet-tree-sitter/tree_sitter.c:498:16: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  498 |     tree->tree = (node->node).tree;
+      |                ^
+
+* add test for print-s-expr comparing with result of tree-sitter parse result?
+  clojure's core.clj might not be a bad thing to test against.
+
+* should nil be returned from things like cfun_node_first_named_child_for_byte
+  or cfun_node_first_child_for_byte or should a node which passes the ts_node_is_null
+  test be returned instead?
+
+* consider emulating portions of emacs' tree-sitter integration api, e.g.
+  treesit-search-subtree
+
+* lang-name-to-path has details about where tree-sitter looks for things baked
+  in.  some of these may have changed in the 0.20.x series (e.g. ~/.tree-sitter
+  may no longer be (the only place?) where things are searched?
+  ~/.cache/tree-sitter/lib is (also?) searched...).  it may be that searching
+  the tree-sitter repository for XDG might help in clarifying / determining
+  details.
+
+* figure out how to not depend on path.janet?
+
 * valgrind
   * invocation command(s):
-  valgrind --tool=memcheck --track-origins=yes --trace-children=yes --dsymutil=yes --leak-check=full --show-leak-kinds=all janet usages/clojure.janet
+  valgrind --tool=memcheck --track-origins=yes --trace-children=yes --dsymutil=yes --leak-check=full --show-leak-kinds=all --show-error-list=yes janet usages/clojure.janet
   valgrind --tool=callgrind janet usages/clojure.janet
   kcachegrind callgrind.out.*
   * understanding the output
   * https://github.com/janet-lang/janet/blob/d3e52a2afb908509f2bfc13e1b4ca07f7d8dd190/Makefile#L186-L216
 
-* janet wrapper of c
- * consider dynamic variable to hold current source, then have a
-   node_text function?
+* consider dynamic variable to hold current source, then have a node_text
+  function?
 
 * wrap TSPoint?
 
-* implement compare in abstract?
+* implement compare, tostring, etc. in abstract?
+
+  struct JanetAbstractType {
+      const char *name;
+      int (*gc)(void *data, size_t len);
+      int (*gcmark)(void *data, size_t len);
+      int (*get)(void *data, Janet key, Janet *out);
+      void (*put)(void *data, Janet key, Janet value);
+      void (*marshal)(void *p, JanetMarshalContext *ctx);
+      void *(*unmarshal)(JanetMarshalContext *ctx);
+      void (*tostring)(void *p, JanetBuffer *buffer);
+      int (*compare)(void *lhs, void *rhs);
+      int32_t (*hash)(void *p, size_t len);
+      Janet(*next)(void *p, Janet key);
+      Janet(*call)(void *p, int32_t argc, Janet *argv);
+      size_t (*length)(void *p, size_t len);
+      JanetByteView(*bytes)(void *p, size_t len);
+  };
 
 * possibly look at this stackoverflow post later:
   https://stackoverflow.com/questions/49322955/c-copy-struct-with-pointers-from-stack-to-heap/49323149
