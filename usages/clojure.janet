@@ -174,3 +174,37 @@
   true
 
   )
+
+(comment
+
+  (def src "(def a 8)")
+
+  (def p (tree-sitter/init "clojure"))
+
+  (assert p "Parser init failed")
+
+  (def t (:parse-string p src))
+
+  (def rn (:root-node t))
+
+  (def q
+    (tree-sitter/query "clojure" "_ @any"))
+
+  (def qc
+    (tree-sitter/query-cursor))
+
+  (:exec qc q rn)
+  # =>
+  nil
+
+  (def [id patt_idx captures]
+    (:next-match qc))
+
+  (def cap-node
+    (get-in captures [0 1]))
+
+  (:eq rn cap-node)
+  # =>
+  true
+
+  )

@@ -52,6 +52,18 @@ typedef struct {
     TSTreeCursor cursor;
 } Cursor;
 
+typedef struct {
+    TSLanguage *language;
+} Language;
+
+typedef struct {
+    TSQuery *query;
+} Query;
+
+typedef struct {
+    TSQueryCursor *query_cursor;
+} QueryCursor;
+
 static int jts_node_get(void *p, Janet key, Janet *out);
 
 const JanetAbstractType jts_node_type = {
@@ -95,6 +107,35 @@ const JanetAbstractType jts_cursor_type = {
     jts_cursor_gc,
     NULL,
     jts_cursor_get,
+    JANET_ATEND_GET
+};
+
+const JanetAbstractType jts_language_type = {
+    "tree-sitter/language",
+    JANET_ATEND_GET
+};
+
+static int jts_query_gc(void *p, size_t size);
+
+static int jts_query_get(void *p, Janet key, Janet *out);
+
+const JanetAbstractType jts_query_type = {
+    "tree-sitter/query",
+    jts_query_gc,
+    NULL,
+    jts_query_get,
+    JANET_ATEND_GET
+};
+
+static int jts_query_cursor_gc(void *p, size_t size);
+
+static int jts_query_cursor_get(void *p, Janet key, Janet *out);
+
+const JanetAbstractType jts_query_cursor_type = {
+    "tree-sitter/query_cursor",
+    jts_query_cursor_gc,
+    NULL,
+    jts_query_cursor_get,
     JANET_ATEND_GET
 };
 
@@ -718,9 +759,26 @@ static Janet cfun_parser_delete(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
-/* static Janet cfun_parser_set_language(int32_t argc, Janet* argv) { */
+/**
+ * Get the parser's current language.
+ */
+static Janet cfun_parser_language(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
+    TSParser *tsparser = parser->parser;
 
-/* } */
+    Language *language =
+        (Language *)janet_abstract(&jts_language_type, sizeof(Language));
+
+    language->language = ts_parser_language(tsparser);
+
+    // XXX: appropriate check?
+    if (!(language->language)) {
+        return janet_wrap_nil();
+    }
+
+    return janet_wrap_abstract(language);
+}
 
 static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
     janet_arity(argc, 2, 3);
@@ -875,7 +933,7 @@ static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
 static const JanetMethod parser_methods[] = {
     {"delete", cfun_parser_delete},
     //  {"set-language", cfun_parser_set_language},
-    //  {"language", cfun_parser_language},
+    {"language", cfun_parser_language},
     {"parse-string", cfun_parser_parse_string},
     {"parse", cfun_parser_parse},
     //  {"set-included-ranges", cfun_parser_set_included_ranges},
@@ -1090,6 +1148,298 @@ static int jts_cursor_get(void *p, Janet key, Janet *out) {
 
 ////////
 
+/**
+ * Create a new query from a string containing one or more S-expression
+ * patterns. The query is associated with a particular language, and can
+ * only be run on syntax nodes parsed with that language.
+ *
+ * If all of the given patterns are valid, this returns a `TSQuery`.
+ * If a pattern is invalid, this returns `NULL`, and provides two pieces
+ * of information about the problem:
+ * 1. The byte offset of the error is written to the `error_offset` parameter.
+ * 2. The type of error is written to the `error_type` parameter.
+ */
+static Janet cfun_query_new(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+
+    Language *language = janet_getabstract(argv, 0, &jts_language_type);
+    TSLanguage *tslang = language->language;
+
+    const char *src = (const char *)janet_getstring(argv, 1);
+
+    // XXX: is this off by one?
+    uint32_t src_len = (uint32_t)strlen(src);
+
+    uint32_t error_offset;
+    TSQueryError error_type;
+
+    TSQuery *tsquery =
+        ts_query_new(tslang, src, src_len, &error_offset, &error_type);
+
+    if (!tsquery) {
+        Janet *tup = janet_tuple_begin(2);
+        // XXX: might lose info?
+        tup[0] = janet_wrap_integer((int32_t)(error_offset));
+        switch (error_type) {
+            default:
+                fprintf(stderr,
+                        "Unexpected TSQueryError: %d\n",
+                        (int)(error_type));
+                exit(1);
+                break;
+            case TSQueryErrorNone:
+                tup[1] = janet_ckeywordv("none");
+                break;
+            case TSQueryErrorSyntax:
+                tup[1] = janet_ckeywordv("syntax");
+                break;
+            case TSQueryErrorNodeType:
+                tup[1] = janet_ckeywordv("node-type");
+                break;
+            case TSQueryErrorField:
+                tup[1] = janet_ckeywordv("field");
+                break;
+            case TSQueryErrorCapture:
+                tup[1] = janet_ckeywordv("capture");
+                break;
+        }
+        return janet_wrap_tuple(janet_tuple_end(tup));
+    }
+
+    Query *q =
+        (Query *)janet_abstract(&jts_query_type, sizeof(Query));
+
+    q->query = tsquery;
+
+    return janet_wrap_abstract(q);
+}
+
+/*
+TSQuery *ts_query_new(
+  const TSLanguage *language,
+  const char *source,
+  uint32_t source_len,
+  uint32_t *error_offset,
+  TSQueryError *error_type
+);
+*/
+
+static const JanetMethod query_methods[] = {
+  /*
+    {"pattern-count", cfun_query_pattern_count},
+    {"capture-count", cfun_query_capture_count},
+    {"string-count", cfun_query_string_count},
+    {"start-byte-for-pattern", cfun_query_start_byte_for_pattern},
+    {"predicates-for-pattern", cfun_query_predicates_for_pattern},
+    {"is-pattern-rooted", cfun_query_is_pattern_rooted},
+    {"is-pattern-guaranteed-at-step", cfun_query_is_pattern_guaranteed_at_step},
+    {"capture-name-for-id", cfun_query_capture_name_for_id},
+    {"capture-quantifier-for-id", cfun_query_capture_quantifier_for_id},
+    {"string-value-for-id", cfun_query_string_value_for_id},
+    {"disable-capture", cfun_query_disable_capture},
+    {"disable-pattern", cfun_query_disable_pattern},
+   */
+    {NULL, NULL}
+};
+
+static int jts_query_gc(void *p, size_t size) {
+    (void) size;
+    Query *query = (Query *)p;
+    if (query) {
+        if (NULL != query->query) {
+            ts_query_delete(query->query);
+            // XXX: ?
+            //&(query->query) = NULL;
+        }
+    }
+    return 0;
+}
+
+static int jts_query_get(void *p, Janet key, Janet *out) {
+    (void) p;
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        return 0;
+    }
+    return janet_getmethod(janet_unwrap_keyword(key), query_methods, out);
+}
+
+////////
+
+
+/**
+ * Create a new cursor for executing a given query.
+ *
+ * The cursor stores the state that is needed to iteratively search
+ * for matches. To use the query cursor, first call `ts_query_cursor_exec`
+ * to start running a given query on a given syntax node. Then, there are
+ * two options for consuming the results of the query:
+ * 1. Repeatedly call `ts_query_cursor_next_match` to iterate over all of the
+ *    *matches* in the order that they were found. Each match contains the
+ *    index of the pattern that matched, and an array of captures. Because
+ *    multiple patterns can match the same set of nodes, one match may contain
+ *    captures that appear *before* some of the captures from a previous match.
+ * 2. Repeatedly call `ts_query_cursor_next_capture` to iterate over all of the
+ *    individual *captures* in the order that they appear. This is useful if
+ *    don't care about which pattern matched, and just want a single ordered
+ *    sequence of captures.
+ *
+ * If you don't care about consuming all of the results, you can stop calling
+ * `ts_query_cursor_next_match` or `ts_query_cursor_next_capture` at any point.
+ *  You can then start executing another query on another node by calling
+ *  `ts_query_cursor_exec` again.
+ */
+static Janet cfun_query_cursor_new(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 0);
+
+    TSQueryCursor *tsquerycursor = ts_query_cursor_new();
+
+    // XXX: can failure occur?
+    if (!tsquerycursor) {
+        return janet_wrap_nil();
+    }
+
+    QueryCursor *qc =
+        (QueryCursor *)janet_abstract(&jts_query_cursor_type,
+                                      sizeof(QueryCursor));
+
+    qc->query_cursor = tsquerycursor;
+
+    return janet_wrap_abstract(qc);
+}
+
+//TSQueryCursor *ts_query_cursor_new(void);
+
+/**
+ * Start running a given query on a given node.
+ */
+static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+
+    QueryCursor *query_cursor =
+        janet_getabstract(argv, 0, &jts_query_cursor_type);
+    // XXX: error-checking?
+
+    Query *query = janet_getabstract(argv, 1, &jts_query_type);
+    // XXX; error-checking?
+
+    Node *node = janet_getabstract(argv, 2, &jts_node_type);
+    if (ts_node_is_null(node->node)) {
+        // XXX: silence this?
+        fprintf(stderr, "node was null");
+        return janet_wrap_nil();
+    }
+
+    ts_query_cursor_exec(query_cursor->query_cursor,
+                         query->query,
+                         node->node);
+
+    // XXX: how to tell apart failure?
+    return janet_wrap_nil();
+}
+//void ts_query_cursor_exec(TSQueryCursor *, const TSQuery *, TSNode);
+
+/**
+ * Advance to the next match of the currently running query.
+ *
+ * If there is a match, write it to `*match` and return `true`.
+ * Otherwise, return `false`.
+ */
+static Janet cfun_query_cursor_next_match(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+
+    QueryCursor *query_cursor =
+        janet_getabstract(argv, 0, &jts_query_cursor_type);
+    // XXX: error-checking?
+
+    TSQueryCursor *tsquerycursor = query_cursor->query_cursor;
+
+    TSQueryMatch match;
+
+    bool result = ts_query_cursor_next_match(tsquerycursor, &match);
+
+    if (!result) {
+        return janet_wrap_nil();
+    }
+
+    // sample return value - 3-tuple: id, pattern_index, captures
+    //
+    // (0                           <- id
+    //  0                           <- pattern_index
+    //  ((0 <tree-sitter/node ...>)
+    //   (1 <tree-sitter/node ...>) <- captures
+    //   ...))
+    Janet *tup = janet_tuple_begin(3);
+
+    tup[0] = janet_wrap_integer(match.id);
+    tup[1] = janet_wrap_integer(match.pattern_index);
+
+    Janet *ctup = janet_tuple_begin(match.capture_count);
+
+    for (uint32_t i = 0; i < match.capture_count; i++) {
+        // XXX: no consistency checking?
+        TSNode tsnode = match.captures[i].node;
+        uint32_t index = match.captures[i].index;
+
+        Janet *itup = janet_tuple_begin(2);
+
+        itup[0] = janet_wrap_integer(index);
+
+        Node *node =
+            (Node *)janet_abstract(&jts_node_type, sizeof(Node));
+        node->node = tsnode;
+        itup[1] = janet_wrap_abstract(node);
+
+        ctup[i] = janet_wrap_tuple(janet_tuple_end(itup));
+    }
+
+    tup[2] = janet_wrap_tuple(janet_tuple_end(ctup));
+
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+//bool ts_query_cursor_next_match(TSQueryCursor *, TSQueryMatch *match);
+
+static const JanetMethod query_cursor_methods[] = {
+    {"exec", cfun_query_cursor_exec},
+  /*
+    {"did-exceed-match-limit", cfun_query_cursor_did_exceed_match_limit},
+    {"match-limit", cfun_query_cursor_match_limit},
+    {"set-match-limit", cfun_query_cursor_set_match_limit},
+    {"set-byte-range", cfun_query_cursor_set_byte_range},
+    {"set-point-range", cfun_query_cursor_set_point_range},
+   */
+    {"next-match", cfun_query_cursor_next_match},
+  /*
+    {"remove-match", cfun_query_cursor_remove_match},
+    {"next-capture", cfun_query_cursor_next_capture},
+   */
+    {NULL, NULL}
+};
+
+static int jts_query_cursor_gc(void *p, size_t size) {
+    (void) size;
+    QueryCursor *query_cursor = (QueryCursor *)p;
+    if (query_cursor) {
+        if (NULL != query_cursor->query_cursor) {
+            ts_query_cursor_delete(query_cursor->query_cursor);
+            // XXX: ?
+            //&(query_cursor->query_cursor) = NULL;
+        }
+    }
+    return 0;
+}
+
+static int jts_query_cursor_get(void *p, Janet key, Janet *out) {
+    (void) p;
+    if (!janet_checktype(key, JANET_KEYWORD)) {
+        return 0;
+    }
+    return janet_getmethod(janet_unwrap_keyword(key),
+                           query_cursor_methods,
+                           out);
+}
+
+////////
+
 static const JanetReg cfuns[] = {
     {
         "_init", cfun_ts_init,
@@ -1102,12 +1452,25 @@ static const JanetReg cfuns[] = {
     {
         "_cursor", cfun_cursor_new,
         "(_tree-sitter/_cursor node)\n\n"
-        "Return new cursor for node.\n"
+        "Return new cursor for `node`.\n"
+    },
+    // XXX: params ok?  update docs when determined
+    {
+        "_query", cfun_query_new,
+        "(_tree-sitter/_query lang-name src)\n\n"
+        "Return new query for `lang-name` and `src`.\n"
+    },
+    {
+        "_query-cursor", cfun_query_cursor_new,
+        "(_tree-sitter/_query-cursor)\n\n"
+        "Return new query cursor.\n"
     },
     {NULL, NULL, NULL}
 };
 
 JANET_MODULE_ENTRY(JanetTable *env) {
+    janet_register_abstract_type(&jts_query_cursor_type);
+    janet_register_abstract_type(&jts_query_type);
     janet_register_abstract_type(&jts_cursor_type);
     janet_register_abstract_type(&jts_parser_type);
     janet_register_abstract_type(&jts_tree_type);

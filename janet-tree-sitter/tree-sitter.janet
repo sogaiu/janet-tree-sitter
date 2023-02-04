@@ -208,6 +208,55 @@
 
   )
 
+(defn query
+  "Return new query for `lang-name` and `src`."
+  [lang-name src]
+  # XXX: better to reuse an existing lang instead of creating new parser?
+  (def p
+    (init lang-name))
+  (assert p "Parser init failed")
+  (def lang
+    (:language p))
+  # XXX
+  (_tree-sitter/_query lang src))
+
+(comment
+
+  # XXX
+  (query "clojure" "_ @any")
+
+  )
+
+(defn query-cursor
+  "Return new query cursor."
+  []
+  (_tree-sitter/_query-cursor))
+
+(comment
+
+  (def src "(def a 8)")
+
+  (def p (init "clojure"))
+  (assert p "Parser init failed")
+  #
+  (def t (:parse-string p src))
+  (def rn (:root-node t))
+
+  (def q
+    (query "clojure" "_ @any"))
+
+  (assert q "Query creation failed")
+
+  (def qc (query-cursor))
+
+  (assert qc "Query cursor creation failed")
+
+  (:exec qc q rn)
+
+  (:next-match qc)
+
+  )
+
 (defn search-dfs
   [root-node pred-fn &opt named-only? depth-limit]
   (default named-only? true)
