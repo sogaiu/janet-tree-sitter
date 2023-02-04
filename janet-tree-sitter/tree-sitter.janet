@@ -257,6 +257,65 @@
 
   )
 
+(defn query-and-report
+  ``
+  Perform `qry` on `src` and report results.
+
+  `qry` should be a string in tree-sitter's query syntax.
+
+  `src` should be a string in language `lang-name`.
+
+  Optional arg `so-path` is a path to a parser shared object.
+  ``
+  [qry src lang-name &opt so-path]
+  (def p
+    (init lang-name so-path))
+  (assert p "Parser init failed")
+  #
+  (def t (:parse-string p src))
+  (def rn (:root-node t))
+
+  (def q
+    (query "clojure" qry))
+
+  (assert q "Query creation failed")
+
+  (def qc (query-cursor))
+
+  (assert qc "Query cursor creation failed")
+
+  (:exec qc q rn)
+
+  (while true
+    (def m
+      (:next-match qc))
+    (unless m
+      (break))
+    (def [id p_idx caps]
+      m)
+    (each [idx node] caps
+      (printf "  pattern: %d" p_idx)
+      (def [s-row s-col] (:start-point node))
+      (def [e-row e-col] (:end-point node))
+      (def [name _] (:capture-name-for-id q idx))
+      (if (= s-row e-row)
+        (printf (string "    "
+                        "capture: %d - %s, "
+                        "start: (%d, %d), "
+                        "end: (%d, %d), "
+                        "text: `%s`")
+                idx name
+                s-row s-col
+                e-row e-col
+                (:text node src))
+        (printf (string "    "
+                        "capture: %s, "
+                        "start: (%d, %d), "
+                        "end: (%d, %d)")
+                name
+                s-row s-col
+                e-row e-col)))))
+
 (defn search-dfs
   [root-node pred-fn &opt named-only? depth-limit]
   (default named-only? true)

@@ -1224,6 +1224,44 @@ TSQuery *ts_query_new(
 );
 */
 
+/**
+ * Get the name and length of one of the query's captures, or one of the
+ * query's string literals. Each capture and string is associated with a
+ * numeric id based on the order that it appeared in the query's source.
+ */
+static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+
+    Query *query = janet_getabstract(argv, 0, &jts_query_type);
+    // XXX; error-checking?
+
+    uint32_t id = (uint32_t)janet_getinteger(argv, 1);
+
+    uint32_t length;
+
+    const char *name =
+        ts_query_capture_name_for_id(query->query, id, &length);
+
+    if (!name) {
+        return janet_wrap_nil();
+    }
+
+    Janet *tup = janet_tuple_begin(2);
+
+    tup[0] = janet_cstringv(name);
+    tup[1] = janet_wrap_integer(length);
+
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
+/*
+const char *ts_query_capture_name_for_id(
+  const TSQuery *,
+  uint32_t id,
+  uint32_t *length
+);
+*/
+
 static const JanetMethod query_methods[] = {
   /*
     {"pattern-count", cfun_query_pattern_count},
@@ -1233,7 +1271,9 @@ static const JanetMethod query_methods[] = {
     {"predicates-for-pattern", cfun_query_predicates_for_pattern},
     {"is-pattern-rooted", cfun_query_is_pattern_rooted},
     {"is-pattern-guaranteed-at-step", cfun_query_is_pattern_guaranteed_at_step},
+   */
     {"capture-name-for-id", cfun_query_capture_name_for_id},
+  /*
     {"capture-quantifier-for-id", cfun_query_capture_quantifier_for_id},
     {"string-value-for-id", cfun_query_string_value_for_id},
     {"disable-capture", cfun_query_disable_capture},
