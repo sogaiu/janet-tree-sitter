@@ -964,10 +964,11 @@ static const JanetMethod parser_methods[] = {
     {"parse", cfun_parser_parse},
     //{"set-included-ranges", cfun_parser_set_included_ranges},
     //{"included-ranges", cfun_parser_included_ranges},
-    {"log-by-eprint", cfun_parser_log_by_eprint},
     //{"set-logger", cfun_parser_set_logger},
     //{"logger", cfun_parser_logger},
-    //{"print-dot-graphs", cfun_parser_print_dot_graphs},
+    {"print-dot-graphs", cfun_parser_print_dot_graphs},
+    // custom
+    {"log-by-eprint", cfun_parser_log_by_eprint},
     {NULL, NULL}
 };
 
