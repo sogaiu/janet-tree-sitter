@@ -719,10 +719,36 @@ static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
     return janet_wrap_tuple(janet_tuple_end(ranges));
 }
 
+/**
+ * Write a DOT graph describing the syntax tree to the given file.
+ */
+static Janet cfun_tree_print_dot_graph(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    // XXX: error checking?
+    Tree *tree = janet_getabstract(argv, 0, &jts_tree_type);
+
+    // XXX: is this safe?
+    JanetFile *of =
+      (JanetFile *)janet_getabstract(argv, 1, &janet_file_type);
+
+    // XXX: check of->flags to make sure writable?
+    //      what about appened, etc.?
+    if (!(of->flags & JANET_FILE_WRITE)) {
+        return janet_wrap_nil();
+    }
+
+    ts_tree_print_dot_graph(tree->tree, of->file);
+
+    return janet_wrap_nil();
+}
+
+//void ts_tree_print_dot_graph(const TSTree *, FILE *);
+
 static const JanetMethod tree_methods[] = {
     {"root-node", cfun_tree_root_node},
     {"edit", cfun_tree_edit},
     {"get-changed-ranges", cfun_tree_get_changed_ranges},
+    {"print-dot-graph", cfun_tree_print_dot_graph},
     {NULL, NULL}
 };
 

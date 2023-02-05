@@ -223,3 +223,22 @@
   [1 4]
 
   )
+
+(comment
+
+  (def src "[:x :y :z]")
+
+  (def p (tree-sitter/init "clojure"))
+
+  (assert p "Parser init failed")
+
+  (def t (:parse-string p src))
+
+  (def of
+    (file/open "/tmp/tree-dot-graph" :w))
+
+  (:print-dot-graph t of)
+
+  (file/close of)
+
+  )
