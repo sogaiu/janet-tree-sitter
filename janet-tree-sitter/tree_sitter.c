@@ -690,7 +690,6 @@ static Janet cfun_node_tree(int32_t argc, Janet *argv) {
 static Janet cfun_node_text(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
-  // XXX: error checking?
   TSNode node = *jts_get_node(argv, 0);
   if (ts_node_is_null(node)) {
     return janet_wrap_nil();
