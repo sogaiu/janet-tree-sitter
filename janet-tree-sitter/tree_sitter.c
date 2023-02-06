@@ -83,10 +83,6 @@ typedef struct {
 } Cursor;
 
 typedef struct {
-  TSLanguage *language;
-} Language;
-
-typedef struct {
   TSQuery *query;
 } Query;
 
@@ -923,17 +919,17 @@ static Janet cfun_parser_language(int32_t argc, Janet *argv) {
 
   TSParser **parser_pp = jts_get_parser(argv, 0);
 
-  Language *language =
-    (Language *)janet_abstract(&jts_language_type, sizeof(Language));
+  TSLanguage **lang_pp =
+    (TSLanguage **)janet_abstract(&jts_language_type, sizeof(TSLanguage *));
 
-  language->language = ts_parser_language(*parser_pp);
+  *lang_pp = ts_parser_language(*parser_pp);
 
   // XXX: appropriate check?
-  if (!(language->language)) {
+  if (!(*lang_pp)) {
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(language);
+  return janet_wrap_abstract(lang_pp);
 }
 
 static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
@@ -1366,8 +1362,8 @@ static int jts_cursor_get(void *p, Janet key, Janet *out) {
 static Janet cfun_query_new(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
-  Language *language = janet_getabstract(argv, 0, &jts_language_type);
-  TSLanguage *tslang = language->language;
+  TSLanguage **lang_pp = janet_getabstract(argv, 0, &jts_language_type);
+  // XXX: check return value?
 
   const char *src = (const char *)janet_getstring(argv, 1);
 
@@ -1378,7 +1374,7 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   TSQueryError error_type;
 
   TSQuery *tsquery =
-    ts_query_new(tslang, src, src_len, &error_offset, &error_type);
+    ts_query_new(*lang_pp, src, src_len, &error_offset, &error_type);
 
   if (!tsquery) {
     Janet *tup = janet_tuple_begin(2);
