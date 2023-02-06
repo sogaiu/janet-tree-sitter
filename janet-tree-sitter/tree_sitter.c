@@ -5,6 +5,55 @@
 #include <stdbool.h>
 #include <tree_sitter/api.h>
 
+// XXX: start adaptaion from parser.c
+
+#include "alloc.h"
+#include "array.h"
+#include "atomic.h"
+#include "clock.h"
+#include "error_costs.h"
+#include "get_changed_ranges.h"
+#include "language.h"
+#include "length.h"
+#include "lexer.h"
+#include "reduce_action.h"
+#include "reusable_node.h"
+#include "stack.h"
+#include "subtree.h"
+#include "tree.h"
+
+typedef struct {
+  Subtree token;
+  Subtree last_external_token;
+  uint32_t byte_index;
+} TokenCache;
+
+struct TSParser {
+  Lexer lexer;
+  Stack *stack;
+  SubtreePool tree_pool;
+  const TSLanguage *language;
+  ReduceActionSet reduce_actions;
+  Subtree finished_tree;
+  SubtreeArray trailing_extras;
+  SubtreeArray trailing_extras2;
+  SubtreeArray scratch_trees;
+  TokenCache token_cache;
+  ReusableNode reusable_node;
+  void *external_scanner_payload;
+  FILE *dot_graph_file;
+  TSClock end_clock;
+  TSDuration timeout_duration;
+  unsigned accept_count;
+  unsigned operation_count;
+  const volatile size_t *cancellation_flag;
+  Subtree old_tree;
+  TSRangeArray included_range_differences;
+  unsigned included_range_difference_index;
+};
+
+// XXX: end adaptation from parser.c
+
 ////////
 
 // these bits are adapted from janet's source code
@@ -954,6 +1003,33 @@ static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
  * to pipe these graphs directly to a `dot(1)` process in order to generate
  * SVG output. You can turn off this logging by passing a negative number.
  */
+static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
+    TSParser *tsparser = parser->parser;
+
+    // XXX: is this safe?
+    JanetFile *of =
+      (JanetFile *)janet_getabstract(argv, 1, &janet_file_type);
+
+    if (!of) {
+        return janet_wrap_nil();
+    }
+
+    // XXX: check of->flags to make sure writable?
+    //      what about appened, etc.?
+    if (!(of->flags & JANET_FILE_WRITE)) {
+        return janet_wrap_nil();
+    }
+
+    // XXX: britle?  cumbersome to get working?  ended up
+    //      including portions of parser.c to get this to work.
+    //      may be there's a better way?
+    tsparser->dot_graph_file = of->file;
+
+    // XXX: more useful than nil as a return value?
+    return janet_wrap_true();
+}
 //void ts_parser_print_dot_graphs(TSParser *self, int file);
 
 static const JanetMethod parser_methods[] = {
@@ -966,7 +1042,8 @@ static const JanetMethod parser_methods[] = {
     //{"included-ranges", cfun_parser_included_ranges},
     //{"set-logger", cfun_parser_set_logger},
     //{"logger", cfun_parser_logger},
-    {"print-dot-graphs", cfun_parser_print_dot_graphs},
+    //{"print-dot-graphs", cfun_parser_print_dot_graphs},
+    {"print-dot-graphs-0", cfun_parser_print_dot_graphs_0},
     // custom
     {"log-by-eprint", cfun_parser_log_by_eprint},
     {NULL, NULL}
