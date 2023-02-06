@@ -169,7 +169,7 @@
   # =>
   true
 
-  (string/has-suffix? "acceptdone" res)
+  (string/has-suffix? "accept\ndone\n" res)
   # =>
   true
 
