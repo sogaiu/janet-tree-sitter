@@ -703,18 +703,10 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
   uint32_t start = ts_node_start_byte(node);
   uint32_t end = ts_node_end_byte(node);
 
-  size_t len = end - start;
-  // XXX: should we be doing this copying?
-  char *text = (char *)malloc(len + 1);
-  if (NULL == text) {
-    fprintf(stderr, "out of memory\n");
-    exit(1);
-  }
+  // XXX: could this be a problem if difference is large?
+  int32_t len = (int32_t)(end - start);
 
-  strncpy(text, source + start, len);
-  text[len] = '\0';
-
-  return janet_cstringv(text);
+  return janet_stringv((const uint8_t *)source + start, len);
 }
 
 static const JanetMethod node_methods[] = {
