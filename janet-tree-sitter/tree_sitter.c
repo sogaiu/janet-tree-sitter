@@ -1150,7 +1150,6 @@ static int jts_parser_gc(void *p, size_t size) {
   (void) size;
 
   TSParser **parser_pp = (TSParser **)p;
-
   if (*parser_pp) {
     ts_parser_delete(*parser_pp);
     *parser_pp = NULL;
