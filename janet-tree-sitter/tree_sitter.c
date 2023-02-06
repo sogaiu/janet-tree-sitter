@@ -7,20 +7,13 @@
 
 // XXX: start adaptaion from parser.c
 
-#include "alloc.h"
-#include "array.h"
-#include "atomic.h"
 #include "clock.h"
-#include "error_costs.h"
 #include "get_changed_ranges.h"
-#include "language.h"
-#include "length.h"
 #include "lexer.h"
 #include "reduce_action.h"
 #include "reusable_node.h"
 #include "stack.h"
 #include "subtree.h"
-#include "tree.h"
 
 typedef struct {
   Subtree token;
