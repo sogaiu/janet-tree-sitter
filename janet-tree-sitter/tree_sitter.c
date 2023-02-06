@@ -176,6 +176,7 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
   const char *path = (const char *)janet_getstring(argv, 0);
   if (!path) {
+    fprintf(stderr, "path to shared object unspecified");
     return janet_wrap_nil();
   }
 
@@ -187,11 +188,12 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
   const char *fn_name = (const char *)janet_getstring(argv, 1);
   if (!fn_name) {
+    fprintf(stderr, "function name unspecified\n");
     return janet_wrap_nil();
   }
 
   JTSLang jtsl;
-  jtsl = (JTSLang) symbol_clib(lib, fn_name);
+  jtsl = (JTSLang)symbol_clib(lib, fn_name);
   if (!jtsl) {
     fprintf(stderr, "could not find the target grammar's initializer");
     return janet_wrap_nil();
