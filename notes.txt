@@ -1,4 +1,13 @@
 * why is there a seg fault when exiting repl that uses this?
+  * keep checking...once wrappers are removed, there's a chance
+    this will be fixed.
+  * use valgrind if problem surfaces again / try examining core files.
+    * valgrind can be run on the generated test file (look for files
+      beginning with an underscore)
+
+* added a bunch of duplication of parser.c to tree_sitter.c to
+  get dot_graph printing working (for the parser).  can this
+  be avoided?  may be neovim code has hints.
 
 * handling freeing of parser ok?
 
