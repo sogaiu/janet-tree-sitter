@@ -83,10 +83,6 @@ typedef struct {
 } Tree;
 
 typedef struct {
-  TSParser *parser;
-} Parser;
-
-typedef struct {
   TSTreeCursor cursor;
 } Cursor;
 
@@ -205,22 +201,22 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  Parser *parser =
-    (Parser *)janet_abstract(&jts_parser_type, sizeof(Parser));
-  parser->parser = ts_parser_new();
+  TSParser **parser_pp =
+    (TSParser **)janet_abstract(&jts_parser_type, sizeof(TSParser *));
+  *parser_pp = ts_parser_new();
 
-  if (!(parser->parser)) {
+  if (!(*parser_pp)) {
     fprintf(stderr, "ts_parser_new failed");
     return janet_wrap_nil();
   }
 
-  if (!ts_parser_set_language(parser->parser, jtsl())) {
-    ts_parser_delete(parser->parser);
+  if (!ts_parser_set_language(*parser_pp, jtsl())) {
+    ts_parser_delete(*parser_pp);
     fprintf(stderr, "ts_parser_set_language failed");
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(parser);
+  return janet_wrap_abstract(parser_pp);
 }
 
 //////// end cfun_ts_init ////////
@@ -915,14 +911,8 @@ static int jts_tree_get(void *p, Janet key, Janet *out) {
 
 ////////
 
-static Janet cfun_parser_delete(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-  Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
-  TSParser *tsparser = parser->parser;
-
-  ts_parser_delete(tsparser);
-
-  return janet_wrap_nil();
+static TSParser **jts_get_parser(const Janet *argv, int32_t n) {
+  return (TSParser **)janet_getabstract(argv, n, &jts_parser_type);
 }
 
 /**
@@ -930,13 +920,13 @@ static Janet cfun_parser_delete(int32_t argc, Janet *argv) {
  */
 static Janet cfun_parser_language(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
-  TSParser *tsparser = parser->parser;
+
+  TSParser **parser_pp = jts_get_parser(argv, 0);
 
   Language *language =
     (Language *)janet_abstract(&jts_language_type, sizeof(Language));
 
-  language->language = ts_parser_language(tsparser);
+  language->language = ts_parser_language(*parser_pp);
 
   // XXX: appropriate check?
   if (!(language->language)) {
@@ -948,8 +938,9 @@ static Janet cfun_parser_language(int32_t argc, Janet *argv) {
 
 static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
   janet_arity(argc, 2, 3);
-  Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
-  TSParser *tsparser = parser->parser;
+
+  TSParser **parser_pp = jts_get_parser(argv, 0);
+
   TSTree *tstree = NULL;
 
   const char *src;
@@ -961,10 +952,10 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
     src = (const char *)janet_getstring(argv, 2);
   }
 
-  TSTree *new_tree = ts_parser_parse_string(tsparser,
-                                            tstree,
+  TSTree *new_tree = ts_parser_parse_string(*parser_pp,
+                                            (const TSTree *)tstree,
                                             src,
-                                            strlen(src));
+                                            (uint32_t)strlen(src));
 
   if (NULL == new_tree) {
     return janet_wrap_nil();
@@ -1019,9 +1010,11 @@ static const char *jts_read_lines_fn(void *payload,
 
 static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 3);
-  Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
-  TSParser *tsparser = parser->parser;
+
+  TSParser **parser_pp = jts_get_parser(argv, 0);
+
   TSTree *tstree;
+
   Janet x = argv[1];
   if (janet_checktype(x, JANET_ABSTRACT)) {
     Tree *old_tree = janet_getabstract(argv, 1, &jts_tree_type);
@@ -1041,7 +1034,7 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
     .encoding = TSInputEncodingUTF8
   };
 
-  TSTree *new_tree = ts_parser_parse(tsparser, tstree, tsinput);
+  TSTree *new_tree = ts_parser_parse(*parser_pp, tstree, tsinput);
 
   if (NULL == new_tree) {
     return janet_wrap_nil();
@@ -1075,12 +1068,12 @@ void log_by_eprint(void *payload, TSLogType type, const char *message) {
 
 static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
-  TSParser *tsparser = parser->parser;
 
-  TSLogger logger = {tsparser, log_by_eprint};
+  TSParser **parser_pp = jts_get_parser(argv, 0);
 
-  ts_parser_set_logger(tsparser, logger);
+  TSLogger logger = {*parser_pp, log_by_eprint};
+
+  ts_parser_set_logger(*parser_pp, logger);
 
   return janet_wrap_nil();
 }
@@ -1098,8 +1091,8 @@ static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
  */
 static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  Parser *parser = janet_getabstract(argv, 0, &jts_parser_type);
-  TSParser *tsparser = parser->parser;
+
+  TSParser **parser_pp = jts_get_parser(argv, 0);
 
   // XXX: is this safe?
   JanetFile *of =
@@ -1115,10 +1108,10 @@ static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  // XXX: britle?  cumbersome to get working?  ended up
-  //      including portions of parser.c to get this to work.
-  //      may be there's a better way?
-  tsparser->dot_graph_file = of->file;
+  // XXX: britle?
+  // XXX: ended up including portions of parser.c near beginning
+  //      of this file to get this working...
+  (*parser_pp)->dot_graph_file = of->file;
 
   // XXX: more useful than nil as a return value?
   return janet_wrap_true();
@@ -1145,13 +1138,11 @@ static const JanetMethod parser_methods[] = {
 static int jts_parser_gc(void *p, size_t size) {
   (void) size;
 
-  Parser *parser = (Parser *)p;
-  if (parser) {
-    if (NULL != parser->parser) {
-      ts_parser_delete(parser->parser);
-      //free(parser->parser);
-      parser->parser = NULL;
-    }
+  TSParser **parser_pp = (TSParser **)p;
+
+  if (*parser_pp) {
+    ts_parser_delete(*parser_pp);
+    *parser_pp = NULL;
   }
 
   return 0;
