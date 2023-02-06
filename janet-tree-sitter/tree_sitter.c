@@ -79,10 +79,6 @@ typedef TSLanguage *(*JTSLang)(void);
 ////////
 
 typedef struct {
-  TSTree *tree;
-} Tree;
-
-typedef struct {
   TSTreeCursor cursor;
 } Cursor;
 
@@ -674,12 +670,12 @@ static Janet cfun_node_tree(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  Tree *tree =
-    (Tree *)janet_abstract(&jts_tree_type, sizeof(Tree));
+  TSTree **tree_pp =
+    (TSTree **)janet_abstract(&jts_tree_type, sizeof(TSTree *));
 
-  tree->tree = node.tree;
+  *tree_pp = node.tree;
 
-  return janet_wrap_abstract(tree);
+  return janet_wrap_abstract(*tree_pp);
 }
 
 static Janet cfun_node_text(int32_t argc, Janet *argv) {
@@ -744,18 +740,22 @@ int jts_node_get(void *p, Janet key, Janet *out) {
 
 ////////
 
+static TSTree **jts_get_tree(const Janet *argv, int32_t n) {
+  return (TSTree **)janet_getabstract(argv, n, &jts_tree_type);
+}
+
 /**
  * Get the root node of the syntax tree.
  */
 static Janet cfun_tree_root_node(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
   // XXX: error checking?
-  Tree *tree = janet_getabstract(argv, 0, &jts_tree_type);
+  TSTree **tree_pp = jts_get_tree(argv, 0);
 
   TSNode *node_p =
     (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
 
-  *node_p = ts_tree_root_node(tree->tree);
+  *node_p = ts_tree_root_node(*tree_pp);
   if (ts_node_is_null(*node_p)) {
     return janet_wrap_nil();
   }
@@ -773,7 +773,7 @@ static Janet cfun_tree_root_node(int32_t argc, Janet *argv) {
 static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 10);
   // XXX: error checking?
-  Tree *tree = janet_getabstract(argv, 0, &jts_tree_type);
+  TSTree **tree_pp = jts_get_tree(argv, 0);
 
   uint32_t start_byte = janet_getinteger(argv, 1);
   uint32_t old_end_byte = janet_getinteger(argv, 2);
@@ -800,7 +800,7 @@ static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
     .new_end_point = new_end_point
   };
 
-  ts_tree_edit(tree->tree, &tsinputedit);
+  ts_tree_edit(*tree_pp, &tsinputedit);
 
   return janet_wrap_nil();
 }
@@ -822,12 +822,13 @@ static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
 static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
   // XXX: error checking?
-  Tree *old_tree = janet_getabstract(argv, 0, &jts_tree_type);
-  Tree *new_tree = janet_getabstract(argv, 1, &jts_tree_type);
+  TSTree **old_tree_pp = jts_get_tree(argv, 0);
+  TSTree **new_tree_pp = jts_get_tree(argv, 1);
+
   uint32_t length = 0;
 
   TSRange *range =
-    ts_tree_get_changed_ranges(old_tree->tree, new_tree->tree, &length);
+    ts_tree_get_changed_ranges(*old_tree_pp, *new_tree_pp, &length);
 
   if (length == 0) {
     free(range);
@@ -859,7 +860,7 @@ static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
 static Janet cfun_tree_print_dot_graph(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
   // XXX: error checking?
-  Tree *tree = janet_getabstract(argv, 0, &jts_tree_type);
+  TSTree **tree_pp = jts_get_tree(argv, 0);
 
   // XXX: is this safe?
   JanetFile *of =
@@ -871,7 +872,7 @@ static Janet cfun_tree_print_dot_graph(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  ts_tree_print_dot_graph(tree->tree, of->file);
+  ts_tree_print_dot_graph(*tree_pp, of->file);
 
   return janet_wrap_nil();
 }
@@ -889,13 +890,10 @@ static const JanetMethod tree_methods[] = {
 static int jts_tree_gc(void *p, size_t size) {
   (void) size;
 
-  Tree *tree = (Tree *)p;
-  if (tree) {
-    if (NULL != tree->tree) {
-      ts_tree_delete(tree->tree);
-      //free(tree->tree);
-      tree->tree = NULL;
-    }
+  TSTree **tree_pp = (TSTree **)p;
+  if (*tree_pp) {
+    ts_tree_delete(*tree_pp);
+    *tree_pp = NULL;
   }
 
   return 0;
@@ -941,32 +939,43 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
 
   TSParser **parser_pp = jts_get_parser(argv, 0);
 
-  TSTree *tstree = NULL;
+  TSTree *old_tree_p = NULL;
 
-  const char *src;
+  uint32_t s_idx;
+
   if (argc == 2) {
-    src = (const char *)janet_getstring(argv, 1);
+    s_idx = 1;
   } else {
-    Tree *old_tree = janet_getabstract(argv, 1, &jts_tree_type);
-    tstree = old_tree->tree;
-    src = (const char *)janet_getstring(argv, 2);
+    TSTree **temp_tree_pp = jts_get_tree(argv, 1);
+    if (!temp_tree_pp) {
+      return janet_wrap_nil();
+    }
+
+    old_tree_p = *temp_tree_pp;
+
+    s_idx = 2;
   }
 
-  TSTree *new_tree = ts_parser_parse_string(*parser_pp,
-                                            (const TSTree *)tstree,
-                                            src,
-                                            (uint32_t)strlen(src));
-
-  if (NULL == new_tree) {
+  const char *src = (const char *)janet_getstring(argv, s_idx);
+  if (!src) {
     return janet_wrap_nil();
   }
 
-  Tree *tree =
-    (Tree *)janet_abstract(&jts_tree_type, sizeof(Tree));
+  TSTree *new_tree_p = ts_parser_parse_string(*parser_pp,
+                                              (const TSTree *)old_tree_p,
+                                              src,
+                                              (uint32_t)strlen(src));
 
-  tree->tree = new_tree;
+  if (!new_tree_p) {
+    return janet_wrap_nil();
+  }
 
-  return janet_wrap_abstract(tree);
+  TSTree **tree_pp =
+    (TSTree **)janet_abstract(&jts_tree_type, sizeof(TSTree *));
+
+  *tree_pp = new_tree_p;
+
+  return janet_wrap_abstract(tree_pp);
 }
 
 static const char *jts_read_lines_fn(void *payload,
@@ -1013,39 +1022,43 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
 
   TSParser **parser_pp = jts_get_parser(argv, 0);
 
-  TSTree *tstree;
+  TSTree *old_tree_p;
 
   Janet x = argv[1];
-  if (janet_checktype(x, JANET_ABSTRACT)) {
-    Tree *old_tree = janet_getabstract(argv, 1, &jts_tree_type);
-    tstree = old_tree->tree;
-  } else if (janet_checktype(x, JANET_NIL)) {
-    tstree = NULL;
+  if (janet_checktype(x, JANET_NIL)) {
+    old_tree_p = NULL;
+  }
+  else if (janet_checktype(x, JANET_ABSTRACT)) {
+    TSTree **temp_tree_pp = jts_get_tree(argv, 1);
+    if (!temp_tree_pp) {
+      return janet_wrap_nil();
+    }
+
+    old_tree_p = *temp_tree_pp;
   } else {
-    // XXX: how to feedback problem?
     return janet_wrap_nil();
   }
 
   JanetArray *lines = janet_getarray(argv, 2);
 
-  TSInput tsinput = (TSInput) {
+  TSInput input = (TSInput) {
     .payload = (void *)lines,
     .read = &jts_read_lines_fn,
     .encoding = TSInputEncodingUTF8
   };
 
-  TSTree *new_tree = ts_parser_parse(*parser_pp, tstree, tsinput);
+  TSTree *new_tree_p = ts_parser_parse(*parser_pp, old_tree_p, input);
 
-  if (NULL == new_tree) {
+  if (!new_tree_p) {
     return janet_wrap_nil();
   }
 
-  Tree *tree =
-    (Tree *)janet_abstract(&jts_tree_type, sizeof(Tree));
+  TSTree **tree_pp =
+    (TSTree **)janet_abstract(&jts_tree_type, sizeof(TSTree *));
 
-  tree->tree = new_tree;
+  *tree_pp = new_tree_p;
 
-  return janet_wrap_abstract(tree);
+  return janet_wrap_abstract(tree_pp);
 }
 
 // XXX: haven't implemented this general thing yet
