@@ -183,6 +183,9 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
   const char *path = (const char *)janet_getstring(argv, 0);
+  if (!path) {
+    return janet_wrap_nil();
+  }
 
   Clib lib = load_clib(path);
   if (!lib) {
@@ -191,6 +194,9 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
   }
 
   const char *fn_name = (const char *)janet_getstring(argv, 1);
+  if (!fn_name) {
+    return janet_wrap_nil();
+  }
 
   JTSLang jtsl;
   jtsl = (JTSLang) symbol_clib(lib, fn_name);
@@ -212,8 +218,6 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
   bool success = ts_parser_set_language(p, jtsl());
   if (!success) {
     fprintf(stderr, "ts_parser_set_language failed");
-    // XXX: abstract will take care of this?
-    //free(p);
     return janet_wrap_nil();
   }
 
