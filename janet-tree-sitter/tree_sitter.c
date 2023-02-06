@@ -977,7 +977,11 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
 //void ts_parser_set_logger(TSParser *self, TSLogger logger);
 
 void log_by_eprint(void *payload, TSLogType type, const char *message) {
-    janet_eprintf("%s", message);
+    if (type == TSLogTypeLex) {
+        janet_eprintf("  %s\n", message);
+    } else {
+        janet_eprintf("%s\n", message);
+    }
 }
 
 static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
