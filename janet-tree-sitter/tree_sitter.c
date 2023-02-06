@@ -205,18 +205,17 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  TSParser *p = ts_parser_new();
-  if (p == NULL) {
+  Parser *parser =
+    (Parser *)janet_abstract(&jts_parser_type, sizeof(Parser));
+  parser->parser = ts_parser_new();
+
+  if (!(parser->parser)) {
     fprintf(stderr, "ts_parser_new failed");
     return janet_wrap_nil();
   }
 
-  Parser *parser =
-    (Parser *)janet_abstract(&jts_parser_type, sizeof(Parser));
-  parser->parser = p;
-
-  bool success = ts_parser_set_language(p, jtsl());
-  if (!success) {
+  if (!ts_parser_set_language(parser->parser, jtsl())) {
+    ts_parser_delete(parser->parser);
     fprintf(stderr, "ts_parser_set_language failed");
     return janet_wrap_nil();
   }
