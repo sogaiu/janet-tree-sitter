@@ -3,16 +3,16 @@
 
 (defn lang-name-to-path
   [lang-name]
-  (var tree-sitter-dir (os/getenv "TREE_SITTER_DIR"))
-  (unless tree-sitter-dir
+  (var tree-sitter-libdir (os/getenv "TREE_SITTER_LIBDIR"))
+  (unless tree-sitter-libdir
     (if-let [home (os/getenv "HOME")]
-      (set tree-sitter-dir (path/join home ".tree-sitter"))
+      (set tree-sitter-libdir
+           (path/join home ".cache" "tree-sitter" "lib"))
       (when-let [user-profile (os/getenv "USERPROFILE")]
-        (set tree-sitter-dir (path/join user-profile ".tree-sitter"))))
-    (unless tree-sitter-dir
-      (break)))
-  (def bin-dir
-    (path/join tree-sitter-dir "bin"))
+        (set tree-sitter-libdir
+             (path/join user-profile ".cache" "tree-sitter"))))
+    (unless tree-sitter-libdir
+      (break nil)))
   # XXX: check appropriateness
   (def lang-name-norm
     (string/replace-all "-" "_" lang-name))
@@ -25,7 +25,7 @@
       ".dylib"
       #
       ".so"))
-  (path/join bin-dir
+  (path/join tree-sitter-libdir
              (string lang-name-norm ext)))
 
 (comment
