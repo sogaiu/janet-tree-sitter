@@ -79,10 +79,6 @@ typedef TSLanguage *(*JTSLang)(void);
 ////////
 
 typedef struct {
-  TSTreeCursor cursor;
-} Cursor;
-
-typedef struct {
   TSQuery *query;
 } Query;
 
@@ -1168,6 +1164,10 @@ static int jts_parser_get(void *p, Janet key, Janet *out) {
 
 ////////
 
+static TSTreeCursor *jts_get_cursor(const Janet *argv, int32_t n) {
+  return (TSTreeCursor *)janet_getabstract(argv, n, &jts_cursor_type);
+}
+
 /**
  * Create a new tree cursor starting from the given node.
  *
@@ -1186,11 +1186,11 @@ static Janet cfun_cursor_new(int32_t argc, Janet *argv) {
   TSTreeCursor c = ts_tree_cursor_new(node);
   // XXX: can't fail?
 
-  Cursor *cursor =
-    (Cursor *)janet_abstract(&jts_cursor_type, sizeof(Cursor));
-  cursor->cursor = c;
+  TSTreeCursor *cursor_p =
+    (TSTreeCursor *)janet_abstract(&jts_cursor_type, sizeof(TSTreeCursor));
+  *cursor_p = c;
 
-  return janet_wrap_abstract(cursor);
+  return janet_wrap_abstract(cursor_p);
 }
 
 /**
@@ -1202,10 +1202,10 @@ static Janet cfun_cursor_new(int32_t argc, Janet *argv) {
 static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
   // XXX: error-checking?
 
-  if (ts_tree_cursor_goto_parent(&(cursor->cursor))) {
+  if (ts_tree_cursor_goto_parent(cursor_p)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -1221,10 +1221,10 @@ static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
 static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
   // XXX: error-checking?
 
-  if (ts_tree_cursor_goto_next_sibling(&(cursor->cursor))) {
+  if (ts_tree_cursor_goto_next_sibling(cursor_p)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -1240,10 +1240,10 @@ static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
 static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
   // XXX: error-checking?
 
-  if (ts_tree_cursor_goto_first_child(&(cursor->cursor))) {
+  if (ts_tree_cursor_goto_first_child(cursor_p)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -1256,7 +1256,7 @@ static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
 static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
-  Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
   // XXX: error-checking?
 
   TSNode node = *jts_get_node(argv, 1);
@@ -1264,7 +1264,7 @@ static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  ts_tree_cursor_reset(&(cursor->cursor), node);
+  ts_tree_cursor_reset(cursor_p, node);
 
   // XXX: better to return true?
   return janet_wrap_nil();
@@ -1276,13 +1276,13 @@ static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
 static Janet cfun_cursor_current_node(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
   // XXX: error-checking?
 
   TSNode *node_p =
     (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
 
-  *node_p = ts_tree_cursor_current_node(&(cursor->cursor));
+  *node_p = ts_tree_cursor_current_node(cursor_p);
   if (ts_node_is_null(*node_p)) {
     return janet_wrap_nil();
   }
@@ -1299,9 +1299,9 @@ static Janet cfun_cursor_current_node(int32_t argc, Janet *argv) {
 static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
   // XXX: error-checking?
-  const char *name = ts_tree_cursor_current_field_name(&(cursor->cursor));
+  const char *name = ts_tree_cursor_current_field_name(cursor_p);
   if (!name) {
     // XXX: is this appropriate handling?
     return janet_wrap_nil();
@@ -1323,13 +1323,9 @@ static const JanetMethod cursor_methods[] = {
 static int jts_cursor_gc(void *p, size_t size) {
   (void) size;
 
-  Cursor *cursor = (Cursor *)p;
-  if (cursor) {
-    if (NULL != &(cursor->cursor)) {
-      ts_tree_cursor_delete(&(cursor->cursor));
-      // XXX: ?
-      //&(cursor->cursor) = NULL;
-    }
+  TSTreeCursor *cursor_p = (TSTreeCursor *)p;
+  if (cursor_p) {
+    ts_tree_cursor_delete(cursor_p);
   }
 
   return 0;
