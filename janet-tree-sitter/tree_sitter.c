@@ -79,10 +79,6 @@ typedef TSLanguage *(*JTSLang)(void);
 ////////
 
 typedef struct {
-  TSNode node;
-} Node;
-
-typedef struct {
   TSTree *tree;
 } Tree;
 
@@ -226,14 +222,19 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
 //////// end cfun_ts_init ////////
 
+static TSNode *jts_get_node(const Janet *argv, int32_t n) {
+  return (TSNode *)janet_getabstract(argv, n, &jts_node_type);
+}
+
 /**
  * Get the node's type as a null-terminated string.
  */
 static Janet cfun_node_type(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  Node *node = (Node *)janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: error checking?
-  const char *the_type = ts_node_type(node->node);
+
+  TSNode node = *jts_get_node(argv, 0);
+
+  const char *the_type = ts_node_type(node);
   if (!the_type) {
     // XXX: is this appropriate handling?
     return janet_wrap_nil();
@@ -247,10 +248,13 @@ static Janet cfun_node_type(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_start_byte(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
 
-  return janet_wrap_integer(ts_node_start_byte(node->node));
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_integer(ts_node_start_byte(node));
 }
 
 /**
@@ -258,10 +262,13 @@ static Janet cfun_node_start_byte(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_end_byte(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
 
-  return janet_wrap_integer(ts_node_end_byte(node->node));
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_integer(ts_node_end_byte(node));
 }
 
 /**
@@ -269,9 +276,13 @@ static Janet cfun_node_end_byte(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_start_point(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  TSPoint point = ts_node_start_point(node->node);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  TSPoint point = ts_node_start_point(node);
 
   Janet *tup = janet_tuple_begin(2);
   tup[0] = janet_wrap_integer(point.row);
@@ -285,9 +296,13 @@ static Janet cfun_node_start_point(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_end_point(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  TSPoint point = ts_node_end_point(node->node);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  TSPoint point = ts_node_end_point(node);
 
   Janet *tup = janet_tuple_begin(2);
   tup[0] = janet_wrap_integer(point.row);
@@ -303,9 +318,13 @@ static Janet cfun_node_end_point(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_is_null(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  if (ts_node_is_null(node->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  if (ts_node_is_null(node)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -319,9 +338,13 @@ static Janet cfun_node_is_null(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_is_named(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  if (ts_node_is_named(node->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  if (ts_node_is_named(node)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -333,9 +356,13 @@ static Janet cfun_node_is_named(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_has_error(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  if (ts_node_has_error(node->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  if (ts_node_has_error(node)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -347,17 +374,21 @@ static Janet cfun_node_has_error(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_parent(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  Node *parent =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  parent->node = ts_node_parent(node->node);
-  if (ts_node_is_null(parent->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(parent);
+  TSNode *parent_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *parent_p = ts_node_parent(node);
+  if (ts_node_is_null(*parent_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(parent_p);
 }
 
 /**
@@ -366,19 +397,24 @@ static Janet cfun_node_parent(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_child(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: how to handle negative appropriately?
-  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
-  Node *child =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  child->node = ts_node_child(node->node, idx);
-  if (ts_node_is_null(child->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(child);
+  // XXX: how to handle negative appropriately?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+
+  TSNode *child_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *child_p = ts_node_child(node, idx);
+  if (ts_node_is_null(*child_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(child_p);
 }
 
 /**
@@ -386,19 +422,24 @@ static Janet cfun_node_child(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_named_child(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: how to handle negative appropriately?
-  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
-  Node *child =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  child->node = ts_node_named_child(node->node, idx);
-  if (ts_node_is_null(child->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(child);
+  // XXX: how to handle negative appropriately?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+
+  TSNode *child_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+  // XXX: error checking?
+  *child_p = ts_node_named_child(node, idx);
+  if (ts_node_is_null(*child_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(child_p);
 }
 
 /**
@@ -406,10 +447,14 @@ static Janet cfun_node_named_child(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_child_count(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
   // XXX: how to handle negative appropriately?
-  return janet_wrap_integer(ts_node_child_count(node->node));
+  return janet_wrap_integer(ts_node_child_count(node));
 }
 
 /**
@@ -417,10 +462,14 @@ static Janet cfun_node_child_count(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_named_child_count(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
   // XXX: how to handle negative appropriately?
-  return janet_wrap_integer(ts_node_named_child_count(node->node));
+  return janet_wrap_integer(ts_node_named_child_count(node));
 }
 
 /**
@@ -428,16 +477,21 @@ static Janet cfun_node_named_child_count(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_next_sibling(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  Node *sibling =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  sibling->node = ts_node_next_sibling(node->node);
-  if (ts_node_is_null(sibling->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
-  return janet_wrap_abstract(sibling);
+
+  TSNode *sibling_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *sibling_p = ts_node_next_sibling(node);
+  if (ts_node_is_null(*sibling_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(sibling_p);
 }
 
 /**
@@ -445,16 +499,21 @@ static Janet cfun_node_next_sibling(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_prev_sibling(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  Node *sibling =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  sibling->node = ts_node_prev_sibling(node->node);
-  if (ts_node_is_null(sibling->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
-  return janet_wrap_abstract(sibling);
+
+  TSNode *sibling_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *sibling_p = ts_node_prev_sibling(node);
+  if (ts_node_is_null(*sibling_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(sibling_p);
 }
 
 /**
@@ -462,19 +521,24 @@ static Janet cfun_node_prev_sibling(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 3);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  uint32_t start = (uint32_t)janet_getinteger(argv, 1);
-  uint32_t end = (uint32_t)janet_getinteger(argv, 2);
-  //
-  Node *desc =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  desc->node = ts_node_descendant_for_byte_range(node->node, start, end);
-  if (ts_node_is_null(desc->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
-  return janet_wrap_abstract(desc);
+
+  uint32_t start = (uint32_t)janet_getinteger(argv, 1);
+  uint32_t end = (uint32_t)janet_getinteger(argv, 2);
+
+  TSNode *desc_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *desc_p = ts_node_descendant_for_byte_range(node, start, end);
+  if (ts_node_is_null(*desc_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(desc_p);
 }
 
 /**
@@ -484,28 +548,34 @@ static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet *argv) {
 // XXX: not wrapping TSPoint
 static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 5);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
   uint32_t start_row = (uint32_t)janet_getinteger(argv, 1);
   uint32_t start_col = (uint32_t)janet_getinteger(argv, 2);
   uint32_t end_row = (uint32_t)janet_getinteger(argv, 3);
   uint32_t end_col = (uint32_t)janet_getinteger(argv, 4);
-  //
-  TSPoint start_p = (TSPoint) {
+
+  TSPoint start_point = (TSPoint) {
     start_row, start_col
   };
-  TSPoint end_p = (TSPoint) {
+
+  TSPoint end_point = (TSPoint) {
     end_row, end_col
   };
-  //
-  Node *desc =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  desc->node = ts_node_descendant_for_point_range(node->node, start_p, end_p);
-  if (ts_node_is_null(desc->node)) {
+
+  TSNode *desc_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *desc_p = ts_node_descendant_for_point_range(node, start_point, end_point);
+  if (ts_node_is_null(*desc_p)) {
     return janet_wrap_nil();
   }
-  return janet_wrap_abstract(desc);
+
+  return janet_wrap_abstract(desc_p);
 }
 
 /**
@@ -513,18 +583,24 @@ static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_first_child_for_byte(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: check for non-negative number?
-  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
-  Node *child =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  child->node = ts_node_first_child_for_byte(node->node, idx);
-  if (ts_node_is_null(child->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
-  return janet_wrap_abstract(child);
+
+  // XXX: check for non-negative number?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+
+  TSNode *child_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *child_p = ts_node_first_child_for_byte(node, idx);
+  if (ts_node_is_null(*child_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(child_p);
 }
 
 /**
@@ -532,18 +608,24 @@ static Janet cfun_node_first_child_for_byte(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_first_named_child_for_byte(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: check for non-negative number?
-  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
-  Node *child =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
-  child->node = ts_node_first_named_child_for_byte(node->node, idx);
-  if (ts_node_is_null(child->node)) {
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
-  return janet_wrap_abstract(child);
+
+  // XXX: check for non-negative number?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+
+  TSNode *child_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *child_p = ts_node_first_named_child_for_byte(node, idx);
+  if (ts_node_is_null(*child_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(child_p);
 }
 
 /**
@@ -551,11 +633,18 @@ static Janet cfun_node_first_named_child_for_byte(int32_t argc, Janet *argv) {
  */
 static Janet cfun_node_eq(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
-  Node *node_l = janet_getabstract(argv, 0, &jts_node_type);
-  // XXX: error checking?
-  Node *node_r = janet_getabstract(argv, 1, &jts_node_type);
-  if (ts_node_eq(node_l->node, node_r->node)) {
+
+  TSNode node_l = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node_l)) {
+    return janet_wrap_nil();
+  }
+
+  TSNode node_r = *jts_get_node(argv, 1);
+  if (ts_node_is_null(node_r)) {
+    return janet_wrap_nil();
+  }
+
+  if (ts_node_eq(node_l, node_r)) {
     return janet_wrap_true();
   } else {
     return janet_wrap_false();
@@ -564,11 +653,14 @@ static Janet cfun_node_eq(int32_t argc, Janet *argv) {
 
 static Janet cfun_node_expr(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  char *text = ts_node_string(node->node);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  char *text = ts_node_string(node);
   if (!text) {
-    // XXX: is this appropriate handling?
     return janet_wrap_nil();
   }
 
@@ -578,12 +670,15 @@ static Janet cfun_node_expr(int32_t argc, Janet *argv) {
 static Janet cfun_node_tree(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
 
   Tree *tree =
     (Tree *)janet_abstract(&jts_tree_type, sizeof(Tree));
 
-  tree->tree = (node->node).tree;
+  tree->tree = node.tree;
 
   return janet_wrap_abstract(tree);
 }
@@ -592,16 +687,18 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
   // XXX: error checking?
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-
-  const char *source = (const char *)janet_getstring(argv, 1);
-  if (!source) {
-    // XXX: is this appropriate handling?
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
-  uint32_t start = ts_node_start_byte(node->node);
-  uint32_t end = ts_node_end_byte(node->node);
+  const char *source = (const char *)janet_getstring(argv, 1);
+  if (!source) {
+    return janet_wrap_nil();
+  }
+
+  uint32_t start = ts_node_start_byte(node);
+  uint32_t end = ts_node_end_byte(node);
 
   size_t len = end - start;
   // XXX: should we be doing this copying?
@@ -665,18 +762,15 @@ static Janet cfun_tree_root_node(int32_t argc, Janet *argv) {
   // XXX: error checking?
   Tree *tree = janet_getabstract(argv, 0, &jts_tree_type);
 
-  Node *rn =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
+  TSNode *node_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
 
-  rn->node = ts_tree_root_node(tree->tree);
-
-  // XXX: is this appropriate checking?
-  if (ts_node_is_null(rn->node)) {
+  *node_p = ts_tree_root_node(tree->tree);
+  if (ts_node_is_null(*node_p)) {
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(rn);
+  return janet_wrap_abstract(node_p);
 }
 
 /**
@@ -690,6 +784,7 @@ static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 10);
   // XXX: error checking?
   Tree *tree = janet_getabstract(argv, 0, &jts_tree_type);
+
   uint32_t start_byte = janet_getinteger(argv, 1);
   uint32_t old_end_byte = janet_getinteger(argv, 2);
   uint32_t new_end_byte = janet_getinteger(argv, 3);
@@ -1088,13 +1183,12 @@ static int jts_parser_get(void *p, Janet key, Janet *out) {
 static Janet cfun_cursor_new(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  Node *node = janet_getabstract(argv, 0, &jts_node_type);
-  if (ts_node_is_null(node->node)) {
-    fprintf(stderr, "node was null");
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
-  TSTreeCursor c = ts_tree_cursor_new(node->node);
+  TSTreeCursor c = ts_tree_cursor_new(node);
   // XXX: can't fail?
 
   Cursor *cursor =
@@ -1170,13 +1264,12 @@ static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
   Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
   // XXX: error-checking?
 
-  Node *node = janet_getabstract(argv, 1, &jts_node_type);
-  if (ts_node_is_null(node->node)) {
-    fprintf(stderr, "node was null");
+  TSNode node = *jts_get_node(argv, 1);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
-  ts_tree_cursor_reset(&(cursor->cursor), node->node);
+  ts_tree_cursor_reset(&(cursor->cursor), node);
 
   // XXX: better to return true?
   return janet_wrap_nil();
@@ -1191,18 +1284,15 @@ static Janet cfun_cursor_current_node(int32_t argc, Janet *argv) {
   Cursor *cursor = janet_getabstract(argv, 0, &jts_cursor_type);
   // XXX: error-checking?
 
-  Node *n =
-    (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-  // XXX: error checking?
+  TSNode *node_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
 
-  n->node = ts_tree_cursor_current_node(&(cursor->cursor));
-
-  // XXX: is this appropriate checking?
-  if (ts_node_is_null(n->node)) {
+  *node_p = ts_tree_cursor_current_node(&(cursor->cursor));
+  if (ts_node_is_null(*node_p)) {
     return janet_wrap_nil();
   }
 
-  return janet_wrap_abstract(n);
+  return janet_wrap_abstract(node_p);
 }
 
 /**
@@ -1480,16 +1570,14 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
   Query *query = janet_getabstract(argv, 1, &jts_query_type);
   // XXX; error-checking?
 
-  Node *node = janet_getabstract(argv, 2, &jts_node_type);
-  if (ts_node_is_null(node->node)) {
-    // XXX: silence this?
-    fprintf(stderr, "node was null");
+  TSNode node = *jts_get_node(argv, 2);
+  if (ts_node_is_null(node)) {
     return janet_wrap_nil();
   }
 
   ts_query_cursor_exec(query_cursor->query_cursor,
                        query->query,
-                       node->node);
+                       node);
 
   // XXX: how to tell apart failure?
   return janet_wrap_nil();
@@ -1535,17 +1623,18 @@ static Janet cfun_query_cursor_next_match(int32_t argc, Janet *argv) {
 
   for (uint32_t i = 0; i < match.capture_count; i++) {
     // XXX: no consistency checking?
-    TSNode tsnode = match.captures[i].node;
+    TSNode node = match.captures[i].node;
     uint32_t index = match.captures[i].index;
 
     Janet *itup = janet_tuple_begin(2);
 
     itup[0] = janet_wrap_integer(index);
 
-    Node *node =
-      (Node *)janet_abstract(&jts_node_type, sizeof(Node));
-    node->node = tsnode;
-    itup[1] = janet_wrap_abstract(node);
+    TSNode *node_p =
+      (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+    *node_p = node;
+    itup[1] = janet_wrap_abstract(node_p);
 
     ctup[i] = janet_wrap_tuple(janet_tuple_end(itup));
   }
