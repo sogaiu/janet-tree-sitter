@@ -1515,6 +1515,7 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
+  // XXX: no failure indication
   ts_query_cursor_exec(*qc_pp, *query_pp, node);
 
   return janet_wrap_nil();
