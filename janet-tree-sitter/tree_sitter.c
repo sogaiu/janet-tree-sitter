@@ -963,49 +963,6 @@ static Janet cfun_parser_language(int32_t argc, Janet *argv) {
   return janet_wrap_abstract(lang_pp);
 }
 
-static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
-  janet_arity(argc, 2, 3);
-
-  TSParser **parser_pp = jts_get_parser(argv, 0);
-
-  TSTree *old_tree_p = NULL;
-
-  uint32_t s_idx;
-
-  if (argc == 2) {
-    s_idx = 1;
-  } else {
-    TSTree **temp_tree_pp = jts_get_tree(argv, 1);
-    if (NULL == temp_tree_pp) {
-      return janet_wrap_nil();
-    }
-
-    old_tree_p = *temp_tree_pp;
-
-    s_idx = 2;
-  }
-
-  const char *src = (const char *)janet_getstring(argv, s_idx);
-  if (NULL == src) {
-    return janet_wrap_nil();
-  }
-
-  TSTree *new_tree_p =
-    ts_parser_parse_string(*parser_pp, (const TSTree *)old_tree_p,
-                           src, (uint32_t)strlen(src));
-
-  if (NULL == new_tree_p) {
-    return janet_wrap_nil();
-  }
-
-  TSTree **tree_pp =
-    (TSTree **)janet_abstract(&jts_tree_type, sizeof(TSTree *));
-
-  *tree_pp = new_tree_p;
-
-  return janet_wrap_abstract(tree_pp);
-}
-
 static const char *jts_read_lines_fn(void *payload,
                                      uint32_t byte_index,
                                      TSPoint position,
@@ -1044,6 +1001,44 @@ static const char *jts_read_lines_fn(void *payload,
   return line + col;
 }
 
+/**
+ * Use the parser to parse some source code and create a syntax tree.
+ *
+ * If you are parsing this document for the first time, pass `NULL` for the
+ * `old_tree` parameter. Otherwise, if you have already parsed an earlier
+ * version of this document and the document has since been edited, pass the
+ * previous syntax tree so that the unchanged parts of it can be reused.
+ * This will save time and memory. For this to work correctly, you must have
+ * already edited the old syntax tree using the `ts_tree_edit` function in a
+ * way that exactly matches the source code changes.
+ *
+ * The `TSInput` parameter lets you specify how to read the text. It has the
+ * following three fields:
+ * 1. `read`: A function to retrieve a chunk of text at a given byte offset
+ *    and (row, column) position. The function should return a pointer to the
+ *    text and write its length to the `bytes_read` pointer. The parser does
+ *    not take ownership of this buffer; it just borrows it until it has
+ *    finished reading it. The function should write a zero value to the
+ *    `bytes_read` pointer to indicate the end of the document.
+ * 2. `payload`: An arbitrary pointer that will be passed to each invocation
+ *    of the `read` function.
+ * 3. `encoding`: An indication of how the text is encoded. Either
+ *    `TSInputEncodingUTF8` or `TSInputEncodingUTF16`.
+ *
+ * This function returns a syntax tree on success, and `NULL` on failure. There
+ * are three possible reasons for failure:
+ * 1. The parser does not have a language assigned. Check for this using the
+      `ts_parser_language` function.
+ * 2. Parsing was cancelled due to a timeout that was set by an earlier call to
+ *    the `ts_parser_set_timeout_micros` function. You can resume parsing from
+ *    where the parser left out by calling `ts_parser_parse` again with the
+ *    same arguments. Or you can start parsing from scratch by first calling
+ *    `ts_parser_reset`.
+ * 3. Parsing was cancelled using a cancellation flag that was set by an
+ *    earlier call to `ts_parser_set_cancellation_flag`. You can resume parsing
+ *    from where the parser left out by calling `ts_parser_parse` again with
+ *    the same arguments.
+ */
 static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 3);
 
@@ -1087,6 +1082,55 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
   return janet_wrap_abstract(tree_pp);
 }
 
+/**
+ * Use the parser to parse some source code stored in one contiguous buffer.
+ * The first two parameters are the same as in the `ts_parser_parse` function
+ * above. The second two parameters indicate the location of the buffer and its
+ * length in bytes.
+ */
+static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
+  janet_arity(argc, 2, 3);
+
+  TSParser **parser_pp = jts_get_parser(argv, 0);
+
+  TSTree *old_tree_p = NULL;
+
+  uint32_t s_idx;
+
+  if (argc == 2) {
+    s_idx = 1;
+  } else {
+    TSTree **temp_tree_pp = jts_get_tree(argv, 1);
+    if (NULL == temp_tree_pp) {
+      return janet_wrap_nil();
+    }
+
+    old_tree_p = *temp_tree_pp;
+
+    s_idx = 2;
+  }
+
+  const char *src = (const char *)janet_getstring(argv, s_idx);
+  if (NULL == src) {
+    return janet_wrap_nil();
+  }
+
+  TSTree *new_tree_p =
+    ts_parser_parse_string(*parser_pp, (const TSTree *)old_tree_p,
+                           src, (uint32_t)strlen(src));
+
+  if (NULL == new_tree_p) {
+    return janet_wrap_nil();
+  }
+
+  TSTree **tree_pp =
+    (TSTree **)janet_abstract(&jts_tree_type, sizeof(TSTree *));
+
+  *tree_pp = new_tree_p;
+
+  return janet_wrap_abstract(tree_pp);
+}
+
 void log_by_eprint(void *payload, TSLogType type, const char *message) {
   if (type == TSLogTypeLex) {
     janet_eprintf("  %s\n", message);
@@ -1107,12 +1151,6 @@ static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
   return janet_wrap_nil();
 }
 
-/**
- * Set the file descriptor to which the parser should write debugging graphs
- * during parsing. The graphs are formatted in the DOT language. You may want
- * to pipe these graphs directly to a `dot(1)` process in order to generate
- * SVG output. You can turn off this logging by passing a negative number.
- */
 static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
@@ -1142,18 +1180,25 @@ static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
 }
 
 static const JanetMethod parser_methods[] = {
+  //{"new", cfun_parser_new},
   //{"delete", cfun_parser_delete},
   //{"set-language", cfun_parser_set_language},
   {"language", cfun_parser_language},
-  {"parse-string", cfun_parser_parse_string},
-  {"parse", cfun_parser_parse},
   //{"set-included-ranges", cfun_parser_set_included_ranges},
   //{"included-ranges", cfun_parser_included_ranges},
+  {"parse", cfun_parser_parse},
+  {"parse-string", cfun_parser_parse_string},
+  //{"parse-string-encoding", cfun_parser_parse_string_encoding},
+  //{"reset", cfun_parser_reset},
+  //{"set-timeout-micros", cfun_parser_set_timeout_micros},
+  //{"timeout-micros", cfun_parser_timeout_micros},
+  //{"set-cancellation-flag", cfun_parser_set_cancellation_flag},
+  //{"cancellation-flag", cfun_parser_cancellation_flag},
   //{"set-logger", cfun_parser_set_logger},
   //{"logger", cfun_parser_logger},
   //{"print-dot-graphs", cfun_parser_print_dot_graphs},
-  {"print-dot-graphs-0", cfun_parser_print_dot_graphs_0},
   // custom
+  {"print-dot-graphs-0", cfun_parser_print_dot_graphs_0},
   {"log-by-eprint", cfun_parser_log_by_eprint},
   {NULL, NULL}
 };
