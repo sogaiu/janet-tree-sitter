@@ -905,7 +905,12 @@ static Janet cfun_tree_print_dot_graph(int32_t argc, Janet *argv) {
 }
 
 static const JanetMethod tree_methods[] = {
+  //{"copy", cfun_tree_copy},
+  //{"delete", cfun_tree_delete},
   {"root-node", cfun_tree_root_node},
+  //{"root-node-with-offset", cfun_tree_root_node_with_offset},
+  //{"language", cfun_tree_language},
+  //{"included-ranges", cfun_tree_included_ranges},
   {"edit", cfun_tree_edit},
   {"get-changed-ranges", cfun_tree_get_changed_ranges},
   {"print-dot-graph", cfun_tree_print_dot_graph},
