@@ -5,9 +5,14 @@
     * valgrind can be run on the generated test file (look for files
       beginning with an underscore)
 
+* figure out how to get debug output from parsing
+  * --debug-graph
+  * --debug
+    * figure out how to make logging more generic
+
 * added a bunch of duplication of parser.c to tree_sitter.c to
   get dot_graph printing working (for the parser).  can this
-  be avoided?  may be neovim code has hints.
+  be avoided?  may be neovim code has hints.  didn't find any...
 
 * handling freeing of parser ok?
 
@@ -42,26 +47,30 @@ static const char *jaylib_getcstring(const Janet *argv, int32_t n) {
     return janet_getcstring(argv, n);
 }
 
-* figure out how to get debug output from parsing
-  * --debug-graph
-  * --debug
-    * figure out how to make logging more generic
-
 * understand the following warnings and implications:
 
-$ jpm test
+$ jpm clean && jpm test
+Deleted build directory build
+compiling janet-tree-sitter/tree_sitter.c to build/janet-tree-sitter___tree_sitter.o...
 compiling tree-sitter/lib/src/lib.c to build/tree-sitter___lib___src___lib.o...
 generating meta file build/_tree-sitter.meta.janet...
-compiling janet-tree-sitter/tree_sitter.c to build/janet-tree-sitter___tree_sitter.o...
 janet-tree-sitter/tree_sitter.c: In function ‘cfun_node_tree’:
-janet-tree-sitter/tree_sitter.c:498:16: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
-  498 |     tree->tree = (node->node).tree;
-      |                ^
+janet-tree-sitter/tree_sitter.c:661:12: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  661 |   *tree_pp = node.tree;
+      |            ^
+janet-tree-sitter/tree_sitter.c: In function ‘cfun_parser_language’:
+janet-tree-sitter/tree_sitter.c:913:12: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  913 |   *lang_pp = ts_parser_language(*parser_pp);
+      |            ^
 compiling janet-tree-sitter/tree_sitter.c to build/janet-tree-sitter___tree_sitter.static.o...
 janet-tree-sitter/tree_sitter.c: In function ‘cfun_node_tree’:
-janet-tree-sitter/tree_sitter.c:498:16: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
-  498 |     tree->tree = (node->node).tree;
-      |                ^
+janet-tree-sitter/tree_sitter.c:661:12: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  661 |   *tree_pp = node.tree;
+      |            ^
+janet-tree-sitter/tree_sitter.c: In function ‘cfun_parser_language’:
+janet-tree-sitter/tree_sitter.c:913:12: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+  913 |   *lang_pp = ts_parser_language(*parser_pp);
+      |            ^
 
 * add test for print-s-expr comparing with result of tree-sitter parse result?
   clojure's core.clj might not be a bad thing to test against.
@@ -72,13 +81,6 @@ janet-tree-sitter/tree_sitter.c:498:16: warning: assignment discards ‘const’
 
 * consider emulating portions of emacs' tree-sitter integration api, e.g.
   treesit-search-subtree
-
-* lang-name-to-path has details about where tree-sitter looks for things baked
-  in.  some of these may have changed in the 0.20.x series (e.g. ~/.tree-sitter
-  may no longer be (the only place?) where things are searched?
-  ~/.cache/tree-sitter/lib is (also?) searched...).  it may be that searching
-  the tree-sitter repository for XDG might help in clarifying / determining
-  details.
 
 * figure out how to not depend on path.janet?
 
