@@ -1336,6 +1336,9 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   TSLanguage **lang_pp = janet_getabstract(argv, 0, &jts_language_type);
 
   const char *src = (const char *)janet_getstring(argv, 1);
+  if (!src) {
+    return janet_wrap_nil();
+  }
 
   // XXX: is this off by one?
   uint32_t src_len = (uint32_t)strlen(src);
