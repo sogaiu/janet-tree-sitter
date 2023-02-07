@@ -78,10 +78,6 @@ typedef TSLanguage *(*JTSLang)(void);
 
 ////////
 
-typedef struct {
-  TSQueryCursor *query_cursor;
-} QueryCursor;
-
 static int jts_node_get(void *p, Janet key, Janet *out);
 
 const JanetAbstractType jts_node_type = {
@@ -1499,6 +1495,9 @@ static int jts_query_get(void *p, Janet key, Janet *out) {
 
 ////////
 
+static TSQueryCursor **jts_get_query_cursor(const Janet *argv, uint32_t n) {
+  return (TSQueryCursor **)janet_getabstract(argv, n, &jts_query_cursor_type);
+}
 
 /**
  * Create a new cursor for executing a given query.
@@ -1525,20 +1524,15 @@ static int jts_query_get(void *p, Janet key, Janet *out) {
 static Janet cfun_query_cursor_new(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 0);
 
-  TSQueryCursor *tsquerycursor = ts_query_cursor_new();
-
-  // XXX: can failure occur?
-  if (!tsquerycursor) {
+  TSQueryCursor **qc_pp =
+    (TSQueryCursor **)janet_abstract(&jts_query_cursor_type,
+                                     sizeof(TSQueryCursor *));
+  *qc_pp = ts_query_cursor_new();
+  if (!(*qc_pp)) {
     return janet_wrap_nil();
   }
 
-  QueryCursor *qc =
-    (QueryCursor *)janet_abstract(&jts_query_cursor_type,
-                                  sizeof(QueryCursor));
-
-  qc->query_cursor = tsquerycursor;
-
-  return janet_wrap_abstract(qc);
+  return janet_wrap_abstract(qc_pp);
 }
 
 //TSQueryCursor *ts_query_cursor_new(void);
@@ -1549,8 +1543,7 @@ static Janet cfun_query_cursor_new(int32_t argc, Janet *argv) {
 static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 3);
 
-  QueryCursor *query_cursor =
-    janet_getabstract(argv, 0, &jts_query_cursor_type);
+  TSQueryCursor **qc_pp = jts_get_query_cursor(argv, 0);
   // XXX: error-checking?
 
   TSQuery **query_pp = jts_get_query(argv, 1);
@@ -1561,9 +1554,7 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  ts_query_cursor_exec(query_cursor->query_cursor,
-                       *query_pp,
-                       node);
+  ts_query_cursor_exec(*qc_pp, *query_pp, node);
 
   // XXX: how to tell apart failure?
   return janet_wrap_nil();
@@ -1579,17 +1570,12 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
 static Janet cfun_query_cursor_next_match(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
-  QueryCursor *query_cursor =
-    janet_getabstract(argv, 0, &jts_query_cursor_type);
+  TSQueryCursor **qc_pp = jts_get_query_cursor(argv, 0);
   // XXX: error-checking?
-
-  TSQueryCursor *tsquerycursor = query_cursor->query_cursor;
 
   TSQueryMatch match;
 
-  bool result = ts_query_cursor_next_match(tsquerycursor, &match);
-
-  if (!result) {
+  if (!ts_query_cursor_next_match(*qc_pp, &match)) {
     return janet_wrap_nil();
   }
 
@@ -1651,13 +1637,9 @@ static const JanetMethod query_cursor_methods[] = {
 static int jts_query_cursor_gc(void *p, size_t size) {
   (void) size;
 
-  QueryCursor *query_cursor = (QueryCursor *)p;
-  if (query_cursor) {
-    if (NULL != query_cursor->query_cursor) {
-      ts_query_cursor_delete(query_cursor->query_cursor);
-      // XXX: ?
-      //&(query_cursor->query_cursor) = NULL;
-    }
+  TSQueryCursor **qc_pp = (TSQueryCursor **)p;
+  if (*qc_pp) {
+    ts_query_cursor_delete(*qc_pp);
   }
 
   return 0;
