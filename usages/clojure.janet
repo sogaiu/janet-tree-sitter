@@ -29,7 +29,8 @@
   false
 
   (:has-error rn)
-  # => false
+  # =>
+  false
 
   (def kn (:child (:child rn 0) 1))
 
