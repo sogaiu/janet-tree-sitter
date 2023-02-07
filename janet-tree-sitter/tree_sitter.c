@@ -863,7 +863,7 @@ static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
     (uint32_t)janet_getinteger(argv, 9)
   };
 
-  TSInputEdit tsinputedit = (TSInputEdit) {
+  TSInputEdit input_edit = (TSInputEdit) {
     .start_byte = start_byte,
     .old_end_byte = old_end_byte,
     .new_end_byte = new_end_byte,
@@ -872,7 +872,7 @@ static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
     .new_end_point = new_end_point
   };
 
-  ts_tree_edit(*tree_pp, &tsinputedit);
+  ts_tree_edit(*tree_pp, &input_edit);
 
   return janet_wrap_nil();
 }
