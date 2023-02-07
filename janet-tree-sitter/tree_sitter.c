@@ -217,7 +217,6 @@ static Janet cfun_node_type(int32_t argc, Janet *argv) {
 
   const char *the_type = ts_node_type(node);
   if (!the_type) {
-    // XXX: is this appropriate handling?
     return janet_wrap_nil();
   }
 
@@ -414,7 +413,7 @@ static Janet cfun_node_named_child(int32_t argc, Janet *argv) {
 
   TSNode *child_p =
     (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
-  // XXX: error checking?
+
   *child_p = ts_node_named_child(node, idx);
   if (ts_node_is_null(*child_p)) {
     return janet_wrap_nil();
@@ -526,7 +525,6 @@ static Janet cfun_node_descendant_for_byte_range(int32_t argc, Janet *argv) {
  * Get the smallest node within this node that spans the given range of
  * (row, column) positions.
  */
-// XXX: not wrapping TSPoint
 static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 5);
 
@@ -735,8 +733,9 @@ static TSTree **jts_get_tree(const Janet *argv, int32_t n) {
  */
 static Janet cfun_tree_root_node(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
-  // XXX: error checking?
+
   TSTree **tree_pp = jts_get_tree(argv, 0);
+  // XXX: error checking?
 
   TSNode *node_p =
     (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
@@ -758,8 +757,9 @@ static Janet cfun_tree_root_node(int32_t argc, Janet *argv) {
  */
 static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 10);
-  // XXX: error checking?
+
   TSTree **tree_pp = jts_get_tree(argv, 0);
+  // XXX: error checking?
 
   uint32_t start_byte = janet_getinteger(argv, 1);
   uint32_t old_end_byte = janet_getinteger(argv, 2);
@@ -807,9 +807,10 @@ static Janet cfun_tree_edit(int32_t argc, Janet *argv) {
  */
 static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
+
   TSTree **old_tree_pp = jts_get_tree(argv, 0);
   TSTree **new_tree_pp = jts_get_tree(argv, 1);
+  // XXX: error checking?
 
   uint32_t length = 0;
 
@@ -821,7 +822,6 @@ static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  // XXX: hopefully this is an appropriate way to work with tuple-building
   Janet *ranges = janet_tuple_begin(length);
 
   for (int i = 0; i < length; i++) {
@@ -845,15 +845,16 @@ static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
  */
 static Janet cfun_tree_print_dot_graph(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
-  // XXX: error checking?
+
   TSTree **tree_pp = jts_get_tree(argv, 0);
+  // XXX: error checking?
 
   // XXX: is this safe?
   JanetFile *of =
     (JanetFile *)janet_getabstract(argv, 1, &janet_file_type);
 
   // XXX: check of->flags to make sure writable?
-  //      what about appened, etc.?
+  //      what about append, etc.?
   if (!(of->flags & JANET_FILE_WRITE)) {
     return janet_wrap_nil();
   }
@@ -862,8 +863,6 @@ static Janet cfun_tree_print_dot_graph(int32_t argc, Janet *argv) {
 
   return janet_wrap_nil();
 }
-
-//void ts_tree_print_dot_graph(const TSTree *, FILE *);
 
 static const JanetMethod tree_methods[] = {
   {"root-node", cfun_tree_root_node},
@@ -947,10 +946,9 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  TSTree *new_tree_p = ts_parser_parse_string(*parser_pp,
-                                              (const TSTree *)old_tree_p,
-                                              src,
-                                              (uint32_t)strlen(src));
+  TSTree *new_tree_p =
+    ts_parser_parse_string(*parser_pp, (const TSTree *)old_tree_p,
+                           src, (uint32_t)strlen(src));
 
   if (!new_tree_p) {
     return janet_wrap_nil();
@@ -981,8 +979,7 @@ static const char *jts_read_lines_fn(void *payload,
   // XXX: keywords and symbols end up being handled by the JANET_STRING case
   if (janet_checktype(lines->data[row], JANET_BUFFER)) {
     JanetBuffer *buf = janet_unwrap_buffer(lines->data[row]);
-    line = \
-      (const char *)janet_string(buf->data, buf->count);
+    line = (const char *)janet_string(buf->data, buf->count);
   } else if (janet_checktype(lines->data[row], JANET_STRING)) {
     line = (const char *)janet_unwrap_string(lines->data[row]);
   } else {
@@ -1013,8 +1010,7 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
   Janet x = argv[1];
   if (janet_checktype(x, JANET_NIL)) {
     old_tree_p = NULL;
-  }
-  else if (janet_checktype(x, JANET_ABSTRACT)) {
+  } else if (janet_checktype(x, JANET_ABSTRACT)) {
     TSTree **temp_tree_pp = jts_get_tree(argv, 1);
     if (!temp_tree_pp) {
       return janet_wrap_nil();
@@ -1047,16 +1043,6 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
   return janet_wrap_abstract(tree_pp);
 }
 
-// XXX: haven't implemented this general thing yet
-/**
- * Set the logger that a parser should use during parsing.
- *
- * The parser does not take ownership over the logger payload. If a logger was
- * previously assigned, the caller is responsible for releasing any memory
- * owned by the previous logger.
- */
-//void ts_parser_set_logger(TSParser *self, TSLogger logger);
-
 void log_by_eprint(void *payload, TSLogType type, const char *message) {
   if (type == TSLogTypeLex) {
     janet_eprintf("  %s\n", message);
@@ -1078,11 +1064,6 @@ static Janet cfun_parser_log_by_eprint(int32_t argc, Janet *argv) {
 }
 
 /**
- * Get the parser's current logger.
- */
-//TSLogger ts_parser_logger(const TSParser *self);
-
-/**
  * Set the file descriptor to which the parser should write debugging graphs
  * during parsing. The graphs are formatted in the DOT language. You may want
  * to pipe these graphs directly to a `dot(1)` process in order to generate
@@ -1102,7 +1083,7 @@ static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
   }
 
   // XXX: check of->flags to make sure writable?
-  //      what about appened, etc.?
+  //      what about append, etc.?
   if (!(of->flags & JANET_FILE_WRITE)) {
     return janet_wrap_nil();
   }
@@ -1115,7 +1096,6 @@ static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
   // XXX: more useful than nil as a return value?
   return janet_wrap_true();
 }
-//void ts_parser_print_dot_graphs(TSParser *self, int file);
 
 static const JanetMethod parser_methods[] = {
   //{"delete", cfun_parser_delete},
@@ -1195,7 +1175,7 @@ static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   if (ts_tree_cursor_goto_parent(cursor_p)) {
     return janet_wrap_true();
@@ -1214,7 +1194,7 @@ static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   if (ts_tree_cursor_goto_next_sibling(cursor_p)) {
     return janet_wrap_true();
@@ -1233,7 +1213,7 @@ static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   if (ts_tree_cursor_goto_first_child(cursor_p)) {
     return janet_wrap_true();
@@ -1249,7 +1229,7 @@ static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
   TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   TSNode node = *jts_get_node(argv, 1);
   if (ts_node_is_null(node)) {
@@ -1269,7 +1249,7 @@ static Janet cfun_cursor_current_node(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   TSNode *node_p =
     (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
@@ -1292,10 +1272,10 @@ static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
+
   const char *name = ts_tree_cursor_current_field_name(cursor_p);
   if (!name) {
-    // XXX: is this appropriate handling?
     return janet_wrap_nil();
   }
 
@@ -1354,7 +1334,6 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
   TSLanguage **lang_pp = janet_getabstract(argv, 0, &jts_language_type);
-  // XXX: check return value?
 
   const char *src = (const char *)janet_getstring(argv, 1);
 
@@ -1405,16 +1384,6 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   return janet_wrap_abstract(q_pp);
 }
 
-/*
-  TSQuery *ts_query_new(
-  const TSLanguage *language,
-  const char *source,
-  uint32_t source_len,
-  uint32_t *error_offset,
-  TSQueryError *error_type
-  );
-*/
-
 /**
  * Get the name and length of one of the query's captures, or one of the
  * query's string literals. Each capture and string is associated with a
@@ -1424,14 +1393,13 @@ static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
   TSQuery **query_pp = jts_get_query(argv, 0);
-  // XXX; error-checking?
+  // XXX; error checking?
 
   uint32_t id = (uint32_t)janet_getinteger(argv, 1);
 
   uint32_t length;
 
-  const char *name =
-    ts_query_capture_name_for_id(*query_pp, id, &length);
+  const char *name = ts_query_capture_name_for_id(*query_pp, id, &length);
   if (!name) {
     return janet_wrap_nil();
   }
@@ -1443,14 +1411,6 @@ static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
 
   return janet_wrap_tuple(janet_tuple_end(tup));
 }
-
-/*
-  const char *ts_query_capture_name_for_id(
-  const TSQuery *,
-  uint32_t id,
-  uint32_t *length
-  );
-*/
 
 static const JanetMethod query_methods[] = {
   /*
@@ -1535,8 +1495,6 @@ static Janet cfun_query_cursor_new(int32_t argc, Janet *argv) {
   return janet_wrap_abstract(qc_pp);
 }
 
-//TSQueryCursor *ts_query_cursor_new(void);
-
 /**
  * Start running a given query on a given node.
  */
@@ -1544,10 +1502,10 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 3);
 
   TSQueryCursor **qc_pp = jts_get_query_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   TSQuery **query_pp = jts_get_query(argv, 1);
-  // XXX; error-checking?
+  // XXX; error checking?
 
   TSNode node = *jts_get_node(argv, 2);
   if (ts_node_is_null(node)) {
@@ -1556,10 +1514,8 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
 
   ts_query_cursor_exec(*qc_pp, *query_pp, node);
 
-  // XXX: how to tell apart failure?
   return janet_wrap_nil();
 }
-//void ts_query_cursor_exec(TSQueryCursor *, const TSQuery *, TSNode);
 
 /**
  * Advance to the next match of the currently running query.
@@ -1571,7 +1527,7 @@ static Janet cfun_query_cursor_next_match(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSQueryCursor **qc_pp = jts_get_query_cursor(argv, 0);
-  // XXX: error-checking?
+  // XXX: error checking?
 
   TSQueryMatch match;
 
@@ -1615,7 +1571,6 @@ static Janet cfun_query_cursor_next_match(int32_t argc, Janet *argv) {
 
   return janet_wrap_tuple(janet_tuple_end(tup));
 }
-//bool ts_query_cursor_next_match(TSQueryCursor *, TSQueryMatch *match);
 
 static const JanetMethod query_cursor_methods[] = {
   {"exec", cfun_query_cursor_exec},
@@ -1673,7 +1628,6 @@ static const JanetReg cfuns[] = {
     "(_tree-sitter/_cursor node)\n\n"
     "Return new cursor for `node`.\n"
   },
-  // XXX: params ok?  update docs when determined
   {
     "_query", cfun_query_new,
     "(_tree-sitter/_query lang-name src)\n\n"
