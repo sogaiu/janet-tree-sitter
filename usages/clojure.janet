@@ -2,6 +2,18 @@
 
 (comment
 
+  (def p (tree-sitter/init "clojure"))
+
+  (def l (:language p))
+
+  (pos? (:version l))
+  # =>
+  true
+
+  )
+
+(comment
+
   (def src "{:a 1 :b [:x :y :z]}")
 
   (def p (tree-sitter/init "clojure"))
