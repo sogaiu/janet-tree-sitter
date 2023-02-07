@@ -1676,19 +1676,16 @@ static Janet cfun_query_cursor_next_match(int32_t argc, Janet *argv) {
 }
 
 static const JanetMethod query_cursor_methods[] = {
+  //{"delete", cfun_query_cursor_delete},
   {"exec", cfun_query_cursor_exec},
-  /*
-    {"did-exceed-match-limit", cfun_query_cursor_did_exceed_match_limit},
-    {"match-limit", cfun_query_cursor_match_limit},
-    {"set-match-limit", cfun_query_cursor_set_match_limit},
-    {"set-byte-range", cfun_query_cursor_set_byte_range},
-    {"set-point-range", cfun_query_cursor_set_point_range},
-  */
+  //{"did-exceed-match-limit", cfun_query_cursor_did_exceed_match_limit},
+  //{"match-limit", cfun_query_cursor_match_limit},
+  //{"set-match-limit", cfun_query_cursor_set_match_limit},
+  //{"set-byte-range", cfun_query_cursor_set_byte_range},
+  //{"set-point-range", cfun_query_cursor_set_point_range},
   {"next-match", cfun_query_cursor_next_match},
-  /*
-    {"remove-match", cfun_query_cursor_remove_match},
-    {"next-capture", cfun_query_cursor_next_capture},
-  */
+  //{"remove-match", cfun_query_cursor_remove_match},
+  //{"next-capture", cfun_query_cursor_next_capture},
   {NULL, NULL}
 };
 
