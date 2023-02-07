@@ -1517,22 +1517,19 @@ static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
 }
 
 static const JanetMethod query_methods[] = {
-  /*
-    {"pattern-count", cfun_query_pattern_count},
-    {"capture-count", cfun_query_capture_count},
-    {"string-count", cfun_query_string_count},
-    {"start-byte-for-pattern", cfun_query_start_byte_for_pattern},
-    {"predicates-for-pattern", cfun_query_predicates_for_pattern},
-    {"is-pattern-rooted", cfun_query_is_pattern_rooted},
-    {"is-pattern-guaranteed-at-step", cfun_query_is_pattern_guaranteed_at_step},
-  */
+  //{"delete", cfun_query_delete},
+  //{"pattern-count", cfun_query_pattern_count},
+  //{"capture-count", cfun_query_capture_count},
+  //{"string-count", cfun_query_string_count},
+  //{"start-byte-for-pattern", cfun_query_start_byte_for_pattern},
+  //{"predicates-for-pattern", cfun_query_predicates_for_pattern},
+  //{"is-pattern-rooted", cfun_query_is_pattern_rooted},
+  //{"is-pattern-guaranteed-at-step", cfun_query_is_pattern_guaranteed_at_step},
   {"capture-name-for-id", cfun_query_capture_name_for_id},
-  /*
-    {"capture-quantifier-for-id", cfun_query_capture_quantifier_for_id},
-    {"string-value-for-id", cfun_query_string_value_for_id},
-    {"disable-capture", cfun_query_disable_capture},
-    {"disable-pattern", cfun_query_disable_pattern},
-  */
+  //{"capture-quantifier-for-id", cfun_query_capture_quantifier_for_id},
+  //{"string-value-for-id", cfun_query_string_value_for_id},
+  //{"disable-capture", cfun_query_disable_capture},
+  //{"disable-pattern", cfun_query_disable_pattern},
   {NULL, NULL}
 };
 
