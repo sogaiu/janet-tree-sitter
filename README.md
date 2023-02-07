@@ -224,8 +224,10 @@ true
 
 ## Credits
 
+* ahlinc - tree-sitter discussions, enhancements, and maintenance
 * bakpakin - pieces of janet, path.janet
+* damieng - tree-sitter discord server
+* dannyfreeman - tree-sitter-clojure work and discussions
 * maxbrunsfeld - tree-sitter
 * pyrmont - discussion
-* Saikyun - discussion, text-experiment, and freja
-
+* saikyun - discussion, text-experiment, and freja
