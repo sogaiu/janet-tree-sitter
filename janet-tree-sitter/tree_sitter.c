@@ -79,10 +79,6 @@ typedef TSLanguage *(*JTSLang)(void);
 ////////
 
 typedef struct {
-  TSQuery *query;
-} Query;
-
-typedef struct {
   TSQueryCursor *query_cursor;
 } QueryCursor;
 
@@ -1343,6 +1339,10 @@ static int jts_cursor_get(void *p, Janet key, Janet *out) {
 
 ////////
 
+static TSQuery **jts_get_query(const Janet *argv, uint32_t n) {
+  return (TSQuery **)janet_getabstract(argv, n, &jts_query_type);
+}
+
 /**
  * Create a new query from a string containing one or more S-expression
  * patterns. The query is associated with a particular language, and can
@@ -1368,10 +1368,9 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   uint32_t error_offset;
   TSQueryError error_type;
 
-  TSQuery *tsquery =
+  TSQuery *query_p =
     ts_query_new(*lang_pp, src, src_len, &error_offset, &error_type);
-
-  if (!tsquery) {
+  if (!query_p) {
     Janet *tup = janet_tuple_begin(2);
     // XXX: might lose info?
     tup[0] = janet_wrap_integer((int32_t)(error_offset));
@@ -1398,15 +1397,16 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
         tup[1] = janet_ckeywordv("capture");
         break;
     }
+
     return janet_wrap_tuple(janet_tuple_end(tup));
   }
 
-  Query *q =
-    (Query *)janet_abstract(&jts_query_type, sizeof(Query));
+  TSQuery **q_pp =
+    (TSQuery **)janet_abstract(&jts_query_type, sizeof(TSQuery *));
 
-  q->query = tsquery;
+  *q_pp = query_p;
 
-  return janet_wrap_abstract(q);
+  return janet_wrap_abstract(q_pp);
 }
 
 /*
@@ -1427,7 +1427,7 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
 static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
-  Query *query = janet_getabstract(argv, 0, &jts_query_type);
+  TSQuery **query_pp = jts_get_query(argv, 0);
   // XXX; error-checking?
 
   uint32_t id = (uint32_t)janet_getinteger(argv, 1);
@@ -1435,8 +1435,7 @@ static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
   uint32_t length;
 
   const char *name =
-    ts_query_capture_name_for_id(query->query, id, &length);
-
+    ts_query_capture_name_for_id(*query_pp, id, &length);
   if (!name) {
     return janet_wrap_nil();
   }
@@ -1480,13 +1479,9 @@ static const JanetMethod query_methods[] = {
 static int jts_query_gc(void *p, size_t size) {
   (void) size;
 
-  Query *query = (Query *)p;
-  if (query) {
-    if (NULL != query->query) {
-      ts_query_delete(query->query);
-      // XXX: ?
-      //&(query->query) = NULL;
-    }
+  TSQuery **query_pp = (TSQuery **)p;
+  if (*query_pp) {
+    ts_query_delete(*query_pp);
   }
 
   return 0;
@@ -1558,7 +1553,7 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
     janet_getabstract(argv, 0, &jts_query_cursor_type);
   // XXX: error-checking?
 
-  Query *query = janet_getabstract(argv, 1, &jts_query_type);
+  TSQuery **query_pp = jts_get_query(argv, 1);
   // XXX; error-checking?
 
   TSNode node = *jts_get_node(argv, 2);
@@ -1567,7 +1562,7 @@ static Janet cfun_query_cursor_exec(int32_t argc, Janet *argv) {
   }
 
   ts_query_cursor_exec(query_cursor->query_cursor,
-                       query->query,
+                       *query_pp,
                        node);
 
   // XXX: how to tell apart failure?
