@@ -89,13 +89,15 @@ const JanetAbstractType jts_language_type = {
   JANET_ATEND_GET
 };
 
-static int jts_node_get(void *p, Janet key, Janet *out);
+static int jts_parser_gc(void *p, size_t size);
 
-const JanetAbstractType jts_node_type = {
-  "tree-sitter/node",
+static int jts_parser_get(void *p, Janet key, Janet *out);
+
+const JanetAbstractType jts_parser_type = {
+  "tree-sitter/parser",
+  jts_parser_gc,
   NULL,
-  NULL,
-  jts_node_get,
+  jts_parser_get,
   JANET_ATEND_GET
 };
 
@@ -111,15 +113,13 @@ const JanetAbstractType jts_tree_type = {
   JANET_ATEND_GET
 };
 
-static int jts_parser_gc(void *p, size_t size);
+static int jts_node_get(void *p, Janet key, Janet *out);
 
-static int jts_parser_get(void *p, Janet key, Janet *out);
-
-const JanetAbstractType jts_parser_type = {
-  "tree-sitter/parser",
-  jts_parser_gc,
+const JanetAbstractType jts_node_type = {
+  "tree-sitter/node",
   NULL,
-  jts_parser_get,
+  NULL,
+  jts_node_get,
   JANET_ATEND_GET
 };
 
@@ -1791,12 +1791,12 @@ static const JanetReg cfuns[] = {
 
 JANET_MODULE_ENTRY(JanetTable *env) {
   janet_register_abstract_type(&jts_language_type);
-  janet_register_abstract_type(&jts_query_cursor_type);
-  janet_register_abstract_type(&jts_query_type);
-  janet_register_abstract_type(&jts_cursor_type);
   janet_register_abstract_type(&jts_parser_type);
   janet_register_abstract_type(&jts_tree_type);
   janet_register_abstract_type(&jts_node_type);
+  janet_register_abstract_type(&jts_cursor_type);
+  janet_register_abstract_type(&jts_query_type);
+  janet_register_abstract_type(&jts_query_cursor_type);
   janet_cfuns(env, "tree-sitter", cfuns);
 }
 
