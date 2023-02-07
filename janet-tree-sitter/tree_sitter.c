@@ -1255,63 +1255,6 @@ static Janet cfun_cursor_new(int32_t argc, Janet *argv) {
 }
 
 /**
- * Move the cursor to the parent of its current node.
- *
- * This returns `true` if the cursor successfully moved, and returns `false`
- * if there was no parent node (the cursor was already on the root node).
- */
-static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-
-  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error checking?
-
-  if (ts_tree_cursor_goto_parent(cursor_p)) {
-    return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
-  }
-}
-
-/**
- * Move the cursor to the next sibling of its current node.
- *
- * This returns `true` if the cursor successfully moved, and returns `false`
- * if there was no next sibling node.
- */
-static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-
-  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error checking?
-
-  if (ts_tree_cursor_goto_next_sibling(cursor_p)) {
-    return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
-  }
-}
-
-/**
- * Move the cursor to the first child of its current node.
- *
- * This returns `true` if the cursor successfully moved, and returns `false`
- * if there were no children.
- */
-static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-
-  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
-  // XXX: error checking?
-
-  if (ts_tree_cursor_goto_first_child(cursor_p)) {
-    return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
-  }
-}
-
-/**
  * Re-initialize a tree cursor to start at a different node.
  */
 static Janet cfun_cursor_reset(int32_t argc, Janet *argv) {
@@ -1371,13 +1314,81 @@ static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
   return janet_cstringv(name);
 }
 
+/**
+ * Move the cursor to the parent of its current node.
+ *
+ * This returns `true` if the cursor successfully moved, and returns `false`
+ * if there was no parent node (the cursor was already on the root node).
+ */
+static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 1);
+
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
+  // XXX: error checking?
+
+  if (ts_tree_cursor_goto_parent(cursor_p)) {
+    return janet_wrap_true();
+  } else {
+    return janet_wrap_false();
+  }
+}
+
+/**
+ * Move the cursor to the next sibling of its current node.
+ *
+ * This returns `true` if the cursor successfully moved, and returns `false`
+ * if there was no next sibling node.
+ */
+static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 1);
+
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
+  // XXX: error checking?
+
+  if (ts_tree_cursor_goto_next_sibling(cursor_p)) {
+    return janet_wrap_true();
+  } else {
+    return janet_wrap_false();
+  }
+}
+
+/**
+ * Move the cursor to the first child of its current node.
+ *
+ * This returns `true` if the cursor successfully moved, and returns `false`
+ * if there were no children.
+ */
+static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 1);
+
+  TSTreeCursor *cursor_p = jts_get_cursor(argv, 0);
+  // XXX: error checking?
+
+  if (ts_tree_cursor_goto_first_child(cursor_p)) {
+    return janet_wrap_true();
+  } else {
+    return janet_wrap_false();
+  }
+}
+
 static const JanetMethod cursor_methods[] = {
+  //{"delete", cfun_cursor_delete},
+  {"reset", cfun_cursor_reset},
+  {"current-node", cfun_cursor_current_node},
+  {"current-field-name", cfun_cursor_current_field_name},
+  //{"current-field-id", cfun_cursor_current_field_id},
+  {"goto-parent", cfun_cursor_goto_parent},
+  {"goto-next-sibling", cfun_cursor_goto_next_sibling},
+  {"goto-first-child", cfun_cursor_goto_first_child},
+  //{"goto-first-child-for-byte", cfun_cursor_goto_first_child_for_byte},
+  //{"goto-first-child-for-point", cfun_cursor_goto_first_child_for_point},
+  //{"copy", cfun_cursor_copy},
+  // custom - convenience aliases
+  {"node", cfun_cursor_current_node},
+  {"field-name", cfun_cursor_current_field_name},
   {"go-parent", cfun_cursor_goto_parent},
   {"go-next-sibling", cfun_cursor_goto_next_sibling},
   {"go-first-child", cfun_cursor_goto_first_child},
-  {"reset", cfun_cursor_reset},
-  {"node", cfun_cursor_current_node},
-  {"field-name", cfun_cursor_current_field_name},
   {NULL, NULL}
 };
 
