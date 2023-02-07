@@ -242,9 +242,11 @@ static const JanetMethod language_methods[] = {
 
 static int jts_language_get(void *p, Janet key, Janet *out) {
   (void) p;
+
   if (!janet_checktype(key, JANET_KEYWORD)) {
     return 0;
   }
+
   return janet_getmethod(janet_unwrap_keyword(key), language_methods, out);
 }
 
@@ -975,9 +977,11 @@ static int jts_tree_gc(void *p, size_t size) {
 
 static int jts_tree_get(void *p, Janet key, Janet *out) {
   (void) p;
+
   if (!janet_checktype(key, JANET_KEYWORD)) {
     return 0;
   }
+
   return janet_getmethod(janet_unwrap_keyword(key), tree_methods, out);
 }
 
@@ -1261,9 +1265,11 @@ static int jts_parser_gc(void *p, size_t size) {
 
 static int jts_parser_get(void *p, Janet key, Janet *out) {
   (void) p;
+
   if (!janet_checktype(key, JANET_KEYWORD)) {
     return 0;
   }
+
   return janet_getmethod(janet_unwrap_keyword(key), parser_methods, out);
 }
 
