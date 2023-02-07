@@ -1297,6 +1297,7 @@ static int jts_cursor_gc(void *p, size_t size) {
   TSTreeCursor *cursor_p = (TSTreeCursor *)p;
   if (cursor_p != NULL) {
     ts_tree_cursor_delete(cursor_p);
+    cursor_p = NULL;
   }
 
   return 0;
@@ -1440,6 +1441,7 @@ static int jts_query_gc(void *p, size_t size) {
   TSQuery **query_pp = (TSQuery **)p;
   if (*query_pp != NULL) {
     ts_query_delete(*query_pp);
+    *query_pp = NULL;
   }
 
   return 0;
@@ -1598,6 +1600,7 @@ static int jts_query_cursor_gc(void *p, size_t size) {
   TSQueryCursor **qc_pp = (TSQueryCursor **)p;
   if (*qc_pp != NULL) {
     ts_query_cursor_delete(*qc_pp);
+    *qc_pp = NULL;
   }
 
   return 0;
