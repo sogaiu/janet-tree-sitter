@@ -1003,7 +1003,6 @@ static Janet cfun_parser_language(int32_t argc, Janet *argv) {
     (TSLanguage **)janet_abstract(&jts_language_type, sizeof(TSLanguage *));
 
   *lang_pp = ts_parser_language(*parser_pp);
-
   if (NULL == *lang_pp) {
     return janet_wrap_nil();
   }
@@ -1117,7 +1116,6 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
   };
 
   TSTree *new_tree_p = ts_parser_parse(*parser_pp, old_tree_p, input);
-
   if (NULL == new_tree_p) {
     return janet_wrap_nil();
   }
@@ -1166,7 +1164,6 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
   TSTree *new_tree_p =
     ts_parser_parse_string(*parser_pp, (const TSTree *)old_tree_p,
                            src, (uint32_t)strlen(src));
-
   if (NULL == new_tree_p) {
     return janet_wrap_nil();
   }
@@ -1207,7 +1204,6 @@ static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
   // XXX: is this safe?
   JanetFile *of =
     (JanetFile *)janet_getabstract(argv, 1, &janet_file_type);
-
   if (NULL == of) {
     return janet_wrap_nil();
   }
