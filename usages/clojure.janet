@@ -24,6 +24,10 @@
 
   (def rn (:root-node t))
 
+  (:is-null rn)
+  # =>
+  false
+
   (:has-error rn)
   # => false
 

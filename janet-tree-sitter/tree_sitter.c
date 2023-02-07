@@ -369,9 +369,6 @@ static Janet cfun_node_is_null(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 1);
 
   TSNode node = *jts_get_node(argv, 0);
-  if (ts_node_is_null(node)) {
-    return janet_wrap_nil();
-  }
 
   if (ts_node_is_null(node)) {
     return janet_wrap_true();
