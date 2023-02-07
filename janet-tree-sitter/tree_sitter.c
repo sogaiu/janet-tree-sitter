@@ -166,13 +166,13 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
   const char *path = (const char *)janet_getstring(argv, 0);
   if (NULL == path) {
-    fprintf(stderr, "path to shared object unspecified");
+    fprintf(stderr, "path to shared object unspecified\n");
     return janet_wrap_nil();
   }
 
   Clib lib = load_clib(path);
   if (NULL == lib) {
-    fprintf(stderr, "%s", error_clib());
+    fprintf(stderr, "%s\n", error_clib());
     return janet_wrap_nil();
   }
 
@@ -184,7 +184,7 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
   JTSLang jtsl = (JTSLang)symbol_clib(lib, fn_name);
   if (NULL == jtsl) {
-    fprintf(stderr, "could not find the target grammar's initializer");
+    fprintf(stderr, "could not find the target grammar's initializer\n");
     return janet_wrap_nil();
   }
 
@@ -193,13 +193,13 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
   *parser_pp = ts_parser_new();
 
   if (NULL == *parser_pp) {
-    fprintf(stderr, "ts_parser_new failed");
+    fprintf(stderr, "ts_parser_new failed\n");
     return janet_wrap_nil();
   }
 
   if (!ts_parser_set_language(*parser_pp, jtsl())) {
     ts_parser_delete(*parser_pp);
-    fprintf(stderr, "ts_parser_set_language failed");
+    fprintf(stderr, "ts_parser_set_language failed\n");
     return janet_wrap_nil();
   }
 
