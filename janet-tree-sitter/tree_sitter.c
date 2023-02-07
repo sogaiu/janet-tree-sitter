@@ -238,20 +238,6 @@ static Janet cfun_node_start_byte(int32_t argc, Janet *argv) {
 }
 
 /**
- * Get the node's end byte.
- */
-static Janet cfun_node_end_byte(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-
-  TSNode node = *jts_get_node(argv, 0);
-  if (ts_node_is_null(node)) {
-    return janet_wrap_nil();
-  }
-
-  return janet_wrap_integer(ts_node_end_byte(node));
-}
-
-/**
  * Get the node's start position row and column.
  */
 static Janet cfun_node_start_point(int32_t argc, Janet *argv) {
@@ -272,6 +258,20 @@ static Janet cfun_node_start_point(int32_t argc, Janet *argv) {
 }
 
 /**
+ * Get the node's end byte.
+ */
+static Janet cfun_node_end_byte(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 1);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_integer(ts_node_end_byte(node));
+}
+
+/**
  * Get the node's end position row and column.
  */
 static Janet cfun_node_end_point(int32_t argc, Janet *argv) {
@@ -289,6 +289,28 @@ static Janet cfun_node_end_point(int32_t argc, Janet *argv) {
   tup[1] = janet_wrap_integer(point.column);
 
   return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
+/**
+ * Get an S-expression representing the node as a string.
+ *
+ * This string is allocated with `malloc` and the caller is responsible for
+ * freeing it using `free`.
+ */
+static Janet cfun_node_string(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 1);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  char *text = ts_node_string(node);
+  if (NULL == text) {
+    return janet_wrap_nil();
+  }
+
+  return janet_cstringv(text);
 }
 
 /**
@@ -398,6 +420,27 @@ static Janet cfun_node_child(int32_t argc, Janet *argv) {
 }
 
 /**
+ * Get the field name for node's child at the given index, where zero represents
+ * the first child. Returns NULL, if no field is found.
+ */
+//const char *ts_node_field_name_for_child(TSNode, uint32_t);
+
+/**
+ * Get the node's number of children.
+ */
+static Janet cfun_node_child_count(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 1);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  // XXX: how to handle negative appropriately?
+  return janet_wrap_integer(ts_node_child_count(node));
+}
+
+/**
  * Get the node's *named* child at the given index.
  */
 static Janet cfun_node_named_child(int32_t argc, Janet *argv) {
@@ -423,21 +466,6 @@ static Janet cfun_node_named_child(int32_t argc, Janet *argv) {
 }
 
 /**
- * Get the node's *named* child at the given index.
- */
-static Janet cfun_node_child_count(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-
-  TSNode node = *jts_get_node(argv, 0);
-  if (ts_node_is_null(node)) {
-    return janet_wrap_nil();
-  }
-
-  // XXX: how to handle negative appropriately?
-  return janet_wrap_integer(ts_node_child_count(node));
-}
-
-/**
  * Get the node's number of *named* children.
  */
 static Janet cfun_node_named_child_count(int32_t argc, Janet *argv) {
@@ -451,6 +479,17 @@ static Janet cfun_node_named_child_count(int32_t argc, Janet *argv) {
   // XXX: how to handle negative appropriately?
   return janet_wrap_integer(ts_node_named_child_count(node));
 }
+
+/**
+ * Get the node's child with the given field name.
+ */
+/*
+TSNode ts_node_child_by_field_name(
+  TSNode self,
+  const char *field_name,
+  uint32_t field_name_length
+);
+*/
 
 /**
  * Get the node's next sibling.
@@ -494,6 +533,56 @@ static Janet cfun_node_prev_sibling(int32_t argc, Janet *argv) {
   }
 
   return janet_wrap_abstract(sibling_p);
+}
+
+/**
+ * Get the node's first child that extends beyond the given byte offset.
+ */
+static Janet cfun_node_first_child_for_byte(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 2);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  // XXX: check for non-negative number?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+
+  TSNode *child_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *child_p = ts_node_first_child_for_byte(node, idx);
+  if (ts_node_is_null(*child_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(child_p);
+}
+
+/**
+ * Get the node's first named child that extends beyond the given byte offset.
+ */
+static Janet cfun_node_first_named_child_for_byte(int32_t argc, Janet *argv) {
+  janet_fixarity(argc, 2);
+
+  TSNode node = *jts_get_node(argv, 0);
+  if (ts_node_is_null(node)) {
+    return janet_wrap_nil();
+  }
+
+  // XXX: check for non-negative number?
+  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
+
+  TSNode *child_p =
+    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
+
+  *child_p = ts_node_first_named_child_for_byte(node, idx);
+  if (ts_node_is_null(*child_p)) {
+    return janet_wrap_nil();
+  }
+
+  return janet_wrap_abstract(child_p);
 }
 
 /**
@@ -558,56 +647,6 @@ static Janet cfun_node_descendant_for_point_range(int32_t argc, Janet *argv) {
 }
 
 /**
- * Get the node's first child that extends beyond the given byte offset.
- */
-static Janet cfun_node_first_child_for_byte(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 2);
-
-  TSNode node = *jts_get_node(argv, 0);
-  if (ts_node_is_null(node)) {
-    return janet_wrap_nil();
-  }
-
-  // XXX: check for non-negative number?
-  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
-
-  TSNode *child_p =
-    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
-
-  *child_p = ts_node_first_child_for_byte(node, idx);
-  if (ts_node_is_null(*child_p)) {
-    return janet_wrap_nil();
-  }
-
-  return janet_wrap_abstract(child_p);
-}
-
-/**
- * Get the node's first named child that extends beyond the given byte offset.
- */
-static Janet cfun_node_first_named_child_for_byte(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 2);
-
-  TSNode node = *jts_get_node(argv, 0);
-  if (ts_node_is_null(node)) {
-    return janet_wrap_nil();
-  }
-
-  // XXX: check for non-negative number?
-  uint32_t idx = (uint32_t)janet_getinteger(argv, 1);
-
-  TSNode *child_p =
-    (TSNode *)janet_abstract(&jts_node_type, sizeof(TSNode));
-
-  *child_p = ts_node_first_named_child_for_byte(node, idx);
-  if (ts_node_is_null(*child_p)) {
-    return janet_wrap_nil();
-  }
-
-  return janet_wrap_abstract(child_p);
-}
-
-/**
  * Check if two nodes are identical.
  */
 static Janet cfun_node_eq(int32_t argc, Janet *argv) {
@@ -628,22 +667,6 @@ static Janet cfun_node_eq(int32_t argc, Janet *argv) {
   } else {
     return janet_wrap_false();
   }
-}
-
-static Janet cfun_node_expr(int32_t argc, Janet *argv) {
-  janet_fixarity(argc, 1);
-
-  TSNode node = *jts_get_node(argv, 0);
-  if (ts_node_is_null(node)) {
-    return janet_wrap_nil();
-  }
-
-  char *text = ts_node_string(node);
-  if (NULL == text) {
-    return janet_wrap_nil();
-  }
-
-  return janet_cstringv(text);
 }
 
 static Janet cfun_node_tree(int32_t argc, Janet *argv) {
@@ -686,27 +709,44 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
 
 static const JanetMethod node_methods[] = {
   {"type", cfun_node_type},
+  //{"symbol", cfun_node_symbol},
   {"start-byte", cfun_node_start_byte},
-  {"end-byte", cfun_node_end_byte},
   {"start-point", cfun_node_start_point},
+  {"end-byte", cfun_node_end_byte},
   {"end-point", cfun_node_end_point},
+  {"string", cfun_node_string},
   {"is-null", cfun_node_is_null},
   {"is-named", cfun_node_is_named},
+  //{"is-missing", cfun_node_is_missing},
+  //{"is-extra", cfun_node_is_extra},
+  //{"has-changes", cfun_node_has_changes},
   {"has-error", cfun_node_has_error},
   {"parent", cfun_node_parent},
   {"child", cfun_node_child},
-  {"named-child", cfun_node_named_child},
+  //{"field-name-for-child", cfun_node_field_name_for_child},
   {"child-count", cfun_node_child_count},
+  {"named-child", cfun_node_named_child},
   {"named-child-count", cfun_node_named_child_count},
+  //{"child-by-field-name", cfun_node_child_by_field-name},
+  //{"child-by-field-id", cfun_node_child_by_field-id},
   {"next-sibling", cfun_node_next_sibling},
   {"prev-sibling", cfun_node_prev_sibling},
-  {"descendant-for-byte-range", cfun_node_descendant_for_byte_range},
-  {"descendant-for-point-range", cfun_node_descendant_for_point_range},
+  //{"next-named-sibling", cfun_node_next_named_sibling},
+  //{"prev-named-sibling", cfun_node_prev_named_sibling},
   {"first-child-for-byte", cfun_node_first_child_for_byte},
   {"first-named-child-for-byte", cfun_node_first_named_child_for_byte},
+  {"descendant-for-byte-range", cfun_node_descendant_for_byte_range},
+  {"descendant-for-point-range", cfun_node_descendant_for_point_range},
+  /*
+  {"named-descendant-for-byte-range",
+   cfun_node_named_descendant_for_byte_range},
+  {"named-descendant-for-point-range",
+   cfun_node_named_descendant_for_point_range},
+  */
+  //{"edit", cfun_node_edit}
   {"eq", cfun_node_eq},
   // custom
-  {"expr", cfun_node_expr},
+  {"expr", cfun_node_string}, // alias for backward compatibility
   {"tree", cfun_node_tree},
   {"text", cfun_node_text},
   {NULL, NULL}
