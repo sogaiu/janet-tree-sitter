@@ -160,26 +160,25 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
   janet_fixarity(argc, 2);
 
   const char *path = (const char *)janet_getstring(argv, 0);
-  if (!path) {
+  if (NULL == path) {
     fprintf(stderr, "path to shared object unspecified");
     return janet_wrap_nil();
   }
 
   Clib lib = load_clib(path);
-  if (!lib) {
+  if (NULL == lib) {
     fprintf(stderr, "%s", error_clib());
     return janet_wrap_nil();
   }
 
   const char *fn_name = (const char *)janet_getstring(argv, 1);
-  if (!fn_name) {
+  if (NULL == fn_name) {
     fprintf(stderr, "function name unspecified\n");
     return janet_wrap_nil();
   }
 
-  JTSLang jtsl;
-  jtsl = (JTSLang)symbol_clib(lib, fn_name);
-  if (!jtsl) {
+  JTSLang jtsl = (JTSLang)symbol_clib(lib, fn_name);
+  if (NULL == jtsl) {
     fprintf(stderr, "could not find the target grammar's initializer");
     return janet_wrap_nil();
   }
@@ -188,7 +187,7 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
     (TSParser **)janet_abstract(&jts_parser_type, sizeof(TSParser *));
   *parser_pp = ts_parser_new();
 
-  if (!(*parser_pp)) {
+  if (NULL == *parser_pp) {
     fprintf(stderr, "ts_parser_new failed");
     return janet_wrap_nil();
   }
@@ -217,7 +216,7 @@ static Janet cfun_node_type(int32_t argc, Janet *argv) {
   TSNode node = *jts_get_node(argv, 0);
 
   const char *the_type = ts_node_type(node);
-  if (!the_type) {
+  if (NULL == the_type) {
     return janet_wrap_nil();
   }
 
@@ -640,7 +639,7 @@ static Janet cfun_node_expr(int32_t argc, Janet *argv) {
   }
 
   char *text = ts_node_string(node);
-  if (!text) {
+  if (NULL == text) {
     return janet_wrap_nil();
   }
 
@@ -672,7 +671,7 @@ static Janet cfun_node_text(int32_t argc, Janet *argv) {
   }
 
   const char *source = (const char *)janet_getstring(argv, 1);
-  if (!source) {
+  if (NULL == source) {
     return janet_wrap_nil();
   }
 
@@ -877,7 +876,7 @@ static int jts_tree_gc(void *p, size_t size) {
   (void) size;
 
   TSTree **tree_pp = (TSTree **)p;
-  if (*tree_pp) {
+  if (*tree_pp != NULL) {
     ts_tree_delete(*tree_pp);
     *tree_pp = NULL;
   }
@@ -912,8 +911,7 @@ static Janet cfun_parser_language(int32_t argc, Janet *argv) {
 
   *lang_pp = ts_parser_language(*parser_pp);
 
-  // XXX: appropriate check?
-  if (!(*lang_pp)) {
+  if (NULL == *lang_pp) {
     return janet_wrap_nil();
   }
 
@@ -933,7 +931,7 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
     s_idx = 1;
   } else {
     TSTree **temp_tree_pp = jts_get_tree(argv, 1);
-    if (!temp_tree_pp) {
+    if (NULL == temp_tree_pp) {
       return janet_wrap_nil();
     }
 
@@ -943,7 +941,7 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
   }
 
   const char *src = (const char *)janet_getstring(argv, s_idx);
-  if (!src) {
+  if (NULL == src) {
     return janet_wrap_nil();
   }
 
@@ -951,7 +949,7 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
     ts_parser_parse_string(*parser_pp, (const TSTree *)old_tree_p,
                            src, (uint32_t)strlen(src));
 
-  if (!new_tree_p) {
+  if (NULL == new_tree_p) {
     return janet_wrap_nil();
   }
 
@@ -1013,7 +1011,7 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
     old_tree_p = NULL;
   } else if (janet_checktype(x, JANET_ABSTRACT)) {
     TSTree **temp_tree_pp = jts_get_tree(argv, 1);
-    if (!temp_tree_pp) {
+    if (NULL == temp_tree_pp) {
       return janet_wrap_nil();
     }
 
@@ -1032,7 +1030,7 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
 
   TSTree *new_tree_p = ts_parser_parse(*parser_pp, old_tree_p, input);
 
-  if (!new_tree_p) {
+  if (NULL == new_tree_p) {
     return janet_wrap_nil();
   }
 
@@ -1079,7 +1077,7 @@ static Janet cfun_parser_print_dot_graphs_0(int32_t argc, Janet *argv) {
   JanetFile *of =
     (JanetFile *)janet_getabstract(argv, 1, &janet_file_type);
 
-  if (!of) {
+  if (NULL == of) {
     return janet_wrap_nil();
   }
 
@@ -1119,7 +1117,7 @@ static int jts_parser_gc(void *p, size_t size) {
   (void) size;
 
   TSParser **parser_pp = (TSParser **)p;
-  if (*parser_pp) {
+  if (*parser_pp != NULL) {
     ts_parser_delete(*parser_pp);
     *parser_pp = NULL;
   }
@@ -1276,7 +1274,7 @@ static Janet cfun_cursor_current_field_name(int32_t argc, Janet *argv) {
   // XXX: error checking?
 
   const char *name = ts_tree_cursor_current_field_name(cursor_p);
-  if (!name) {
+  if (NULL == name) {
     return janet_wrap_nil();
   }
 
@@ -1297,7 +1295,7 @@ static int jts_cursor_gc(void *p, size_t size) {
   (void) size;
 
   TSTreeCursor *cursor_p = (TSTreeCursor *)p;
-  if (cursor_p) {
+  if (cursor_p != NULL) {
     ts_tree_cursor_delete(cursor_p);
   }
 
@@ -1337,7 +1335,7 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   TSLanguage **lang_pp = janet_getabstract(argv, 0, &jts_language_type);
 
   const char *src = (const char *)janet_getstring(argv, 1);
-  if (!src) {
+  if (NULL == src) {
     return janet_wrap_nil();
   }
 
@@ -1349,7 +1347,7 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
 
   TSQuery *query_p =
     ts_query_new(*lang_pp, src, src_len, &error_offset, &error_type);
-  if (!query_p) {
+  if (NULL == query_p) {
     Janet *tup = janet_tuple_begin(2);
     // XXX: might lose info?
     tup[0] = janet_wrap_integer((int32_t)(error_offset));
@@ -1404,7 +1402,7 @@ static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
   uint32_t length;
 
   const char *name = ts_query_capture_name_for_id(*query_pp, id, &length);
-  if (!name) {
+  if (NULL == name) {
     return janet_wrap_nil();
   }
 
@@ -1440,7 +1438,7 @@ static int jts_query_gc(void *p, size_t size) {
   (void) size;
 
   TSQuery **query_pp = (TSQuery **)p;
-  if (*query_pp) {
+  if (*query_pp != NULL) {
     ts_query_delete(*query_pp);
   }
 
@@ -1492,7 +1490,7 @@ static Janet cfun_query_cursor_new(int32_t argc, Janet *argv) {
     (TSQueryCursor **)janet_abstract(&jts_query_cursor_type,
                                      sizeof(TSQueryCursor *));
   *qc_pp = ts_query_cursor_new();
-  if (!(*qc_pp)) {
+  if (NULL == *qc_pp) {
     return janet_wrap_nil();
   }
 
@@ -1598,7 +1596,7 @@ static int jts_query_cursor_gc(void *p, size_t size) {
   (void) size;
 
   TSQueryCursor **qc_pp = (TSQueryCursor **)p;
-  if (*qc_pp) {
+  if (*qc_pp != NULL) {
     ts_query_cursor_delete(*qc_pp);
   }
 
