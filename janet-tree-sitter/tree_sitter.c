@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <tree_sitter/api.h>
+
+#include "tree_sitter/api.h"
 
 // XXX: start adaptaion from parser.c
 
