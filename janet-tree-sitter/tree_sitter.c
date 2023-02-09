@@ -726,7 +726,9 @@ static Janet cfun_node_tree(int32_t argc, Janet *argv) {
   TSTree **tree_pp =
     (TSTree **)janet_abstract(&jts_tree_type, sizeof(TSTree *));
 
-  *tree_pp = node.tree;
+  // XXX: casting to avoid warning, but don't really want to
+  //      allow *tree_pp to be modified after this point?
+  *tree_pp = (TSTree *)node.tree;
 
   return janet_wrap_abstract(*tree_pp);
 }
@@ -1002,7 +1004,9 @@ static Janet cfun_parser_language(int32_t argc, Janet *argv) {
   TSLanguage **lang_pp =
     (TSLanguage **)janet_abstract(&jts_language_type, sizeof(TSLanguage *));
 
-  *lang_pp = ts_parser_language(*parser_pp);
+  // XXX: casting to avoid warning, but don't really want to
+  //      allow *lang_pp to be modified after this point?
+  *lang_pp = (TSLanguage *)ts_parser_language(*parser_pp);
   if (NULL == *lang_pp) {
     return janet_wrap_nil();
   }
