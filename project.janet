@@ -1,4 +1,9 @@
-(import ./support/path)
+(defn path-join
+  [left right &opt sepa]
+  (default sepa (if (= :windows (os/which))
+                  "\\"
+                  "/"))
+  (string left sepa right))
 
 (declare-project
   :name "janet-tree-sitter" # XXX: be nice to automated processing
@@ -16,7 +21,7 @@
   proj-name)
 
 (def src-root
-  (path/join proj-root proj-dir-name))
+  (path-join proj-root proj-dir-name))
 
 (declare-native
   :name "_tree-sitter"

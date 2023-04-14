@@ -1,5 +1,33 @@
 (import ./_tree-sitter)
-(import ./path :prefix "")
+
+(def sep
+  (if (= :windows (os/which))
+    "\\"
+    "/"))
+
+(defn path-join
+  [left right &opt sepa]
+  (default sepa sep)
+  (string left sepa right))
+
+(comment
+
+  (path-join "/tmp" "test.txt" "/")
+  # =>
+  "/tmp/test.txt"
+
+  (path-join "C:\\windows" "system32" "\\")
+  # =>
+  "C:\\windows\\system32"
+
+  )
+
+(defn path-basename
+  [path]
+  (->> (string/reverse path)
+       (peg/match ~(capture (to ,sep)))
+       first
+       string/reverse))
 
 (defn lang-name-to-path
   [lang-name]
@@ -7,10 +35,10 @@
   (unless tree-sitter-libdir
     (if-let [home (os/getenv "HOME")]
       (set tree-sitter-libdir
-           (path/join home ".cache" "tree-sitter" "lib"))
+           (path-join (path-join (path-join home ".cache") "tree-sitter") "lib"))
       (when-let [user-profile (os/getenv "USERPROFILE")]
         (set tree-sitter-libdir
-             (path/join user-profile ".cache" "tree-sitter"))))
+             (path-join (path-join user-profile ".cache") "tree-sitter"))))
     (unless tree-sitter-libdir
       (break nil)))
   # XXX: check appropriateness
@@ -25,30 +53,30 @@
       ".dylib"
       #
       ".so"))
-  (path/join tree-sitter-libdir
+  (path-join tree-sitter-libdir
              (string lang-name-norm ext)))
 
 (comment
 
-  (let [base (path/basename (lang-name-to-path "clojure"))]
+  (let [base (path-basename (lang-name-to-path "clojure"))]
     (and (string/has-prefix? "clojure" base)
          (or (string/has-suffix? ".so" base)
              (string/has-suffix? ".dll" base))))
-  # =>
+  ## =>
   true
 
-  (let [base (path/basename (lang-name-to-path "janet_simple"))]
+  (let [base (path-basename (lang-name-to-path "janet_simple"))]
     (and (string/has-prefix? "janet_simple" base)
          (or (string/has-suffix? ".so" base)
              (string/has-suffix? ".dll" base))))
-  # =>
+  ## =>
   true
 
-  (let [base (path/basename (lang-name-to-path "janet-simple"))]
+  (let [base (path-basename (lang-name-to-path "janet-simple"))]
     (and (string/has-prefix? "janet_simple" base)
          (or (string/has-suffix? ".so" base)
              (string/has-suffix? ".dll" base))))
-  # =>
+  ## =>
   true
 
   )
