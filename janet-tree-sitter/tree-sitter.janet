@@ -364,14 +364,14 @@
     (when (neg? limit)
       (break false))
     #
-    (def count
+    (def cnt
       (if named
         (:named-child-count node)
         (:child-count node)))
     (var idx 0)
     (var done false)
     (while (and (not done)
-                (< idx count))
+                (< idx cnt))
       (def child
         (if named
           (:named-child node idx)
