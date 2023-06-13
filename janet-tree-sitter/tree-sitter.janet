@@ -306,7 +306,7 @@
   (def rn (:root-node t))
 
   (def q
-    (query "clojure" qry))
+    (query lang-name qry))
 
   (assert q "Query creation failed")
 
