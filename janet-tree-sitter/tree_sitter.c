@@ -1,8 +1,9 @@
 #include <janet.h>
-#include <string.h>
+
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
 
 #include "tree_sitter/api.h"
 
@@ -166,25 +167,25 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
 
   const char *path = (const char *)janet_getstring(argv, 0);
   if (NULL == path) {
-    fprintf(stderr, "path to shared object unspecified\n");
+    (void)fprintf(stderr, "path to shared object unspecified\n");
     return janet_wrap_nil();
   }
 
   Clib lib = load_clib(path);
   if (NULL == lib) {
-    fprintf(stderr, "%s\n", error_clib());
+    (void)fprintf(stderr, "%s\n", error_clib());
     return janet_wrap_nil();
   }
 
   const char *fn_name = (const char *)janet_getstring(argv, 1);
   if (NULL == fn_name) {
-    fprintf(stderr, "function name unspecified\n");
+    (void)fprintf(stderr, "function name unspecified\n");
     return janet_wrap_nil();
   }
 
   JTSLang jtsl = (JTSLang)symbol_clib(lib, fn_name);
   if (NULL == jtsl) {
-    fprintf(stderr, "could not find the target grammar's initializer\n");
+    (void)fprintf(stderr, "could not find the target grammar's initializer\n");
     return janet_wrap_nil();
   }
 
@@ -193,13 +194,13 @@ static Janet cfun_ts_init(int32_t argc, Janet *argv) {
   *parser_pp = ts_parser_new();
 
   if (NULL == *parser_pp) {
-    fprintf(stderr, "ts_parser_new failed\n");
+    (void)fprintf(stderr, "ts_parser_new failed\n");
     return janet_wrap_nil();
   }
 
   if (!ts_parser_set_language(*parser_pp, jtsl())) {
     ts_parser_delete(*parser_pp);
-    fprintf(stderr, "ts_parser_set_language failed\n");
+    (void)fprintf(stderr, "ts_parser_set_language failed\n");
     return janet_wrap_nil();
   }
 
@@ -374,9 +375,9 @@ static Janet cfun_node_is_null(int32_t argc, Janet *argv) {
 
   if (ts_node_is_null(node)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 /**
@@ -394,9 +395,9 @@ static Janet cfun_node_is_named(int32_t argc, Janet *argv) {
 
   if (ts_node_is_named(node)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 /**
@@ -412,9 +413,9 @@ static Janet cfun_node_has_error(int32_t argc, Janet *argv) {
 
   if (ts_node_has_error(node)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 /**
@@ -710,9 +711,9 @@ static Janet cfun_node_eq(int32_t argc, Janet *argv) {
 
   if (ts_node_eq(node_l, node_r)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 static Janet cfun_node_tree(int32_t argc, Janet *argv) {
@@ -910,7 +911,7 @@ static Janet cfun_tree_get_changed_ranges(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
   }
 
-  Janet *ranges = janet_tuple_begin(length);
+  Janet *ranges = janet_tuple_begin((int32_t)length);
 
   for (int i = 0; i < length; i++) {
     Janet *tup = janet_tuple_begin(6);
@@ -1018,6 +1019,7 @@ static const char *jts_read_lines_fn(void *payload,
                                      uint32_t byte_index,
                                      TSPoint position,
                                      uint32_t *bytes_read) {
+  (void)byte_index;
   JanetArray *lines = (JanetArray *)payload;
 
   uint32_t row = position.row;
@@ -1027,7 +1029,7 @@ static const char *jts_read_lines_fn(void *payload,
     return NULL;
   }
 
-  const char *line;
+  const char *line = 0;
   // XXX: keywords and symbols end up being handled by the JANET_STRING case
   if (janet_checktype(lines->data[row], JANET_BUFFER)) {
     JanetBuffer *buf = janet_unwrap_buffer(lines->data[row]);
@@ -1095,7 +1097,7 @@ static Janet cfun_parser_parse(int32_t argc, Janet *argv) {
 
   TSParser **parser_pp = jts_get_parser(argv, 0);
 
-  TSTree *old_tree_p;
+  TSTree *old_tree_p = NULL;
 
   Janet x = argv[1];
   if (janet_checktype(x, JANET_NIL)) {
@@ -1145,7 +1147,7 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
 
   TSTree *old_tree_p = NULL;
 
-  uint32_t s_idx;
+  int32_t s_idx = 0;
 
   if (argc == 2) {
     s_idx = 1;
@@ -1181,6 +1183,7 @@ static Janet cfun_parser_parse_string(int32_t argc, Janet *argv) {
 }
 
 void log_by_eprint(void *payload, TSLogType type, const char *message) {
+  (void)payload;
   if (type == TSLogTypeLex) {
     janet_eprintf("  %s\n", message);
   } else {
@@ -1378,9 +1381,9 @@ static Janet cfun_cursor_goto_parent(int32_t argc, Janet *argv) {
 
   if (ts_tree_cursor_goto_parent(cursor_p)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 /**
@@ -1397,9 +1400,9 @@ static Janet cfun_cursor_goto_next_sibling(int32_t argc, Janet *argv) {
 
   if (ts_tree_cursor_goto_next_sibling(cursor_p)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 /**
@@ -1416,9 +1419,9 @@ static Janet cfun_cursor_goto_first_child(int32_t argc, Janet *argv) {
 
   if (ts_tree_cursor_goto_first_child(cursor_p)) {
     return janet_wrap_true();
-  } else {
-    return janet_wrap_false();
   }
+
+  return janet_wrap_false();
 }
 
 static const JanetMethod cursor_methods[] = {
@@ -1467,7 +1470,7 @@ static int jts_cursor_get(void *p, Janet key, Janet *out) {
 ////////
 
 static TSQuery **jts_get_query(const Janet *argv, uint32_t n) {
-  return (TSQuery **)janet_getabstract(argv, n, &jts_query_type);
+  return (TSQuery **)janet_getabstract(argv, (int32_t)n, &jts_query_type);
 }
 
 /**
@@ -1494,8 +1497,8 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
   // XXX: is this off by one?
   uint32_t src_len = (uint32_t)strlen(src);
 
-  uint32_t error_offset;
-  TSQueryError error_type;
+  uint32_t error_offset = 0;
+  TSQueryError error_type = TSQueryErrorNone;
 
   TSQuery *query_p =
     ts_query_new(*lang_pp, src, src_len, &error_offset, &error_type);
@@ -1505,9 +1508,9 @@ static Janet cfun_query_new(int32_t argc, Janet *argv) {
     tup[0] = janet_wrap_integer((int32_t)(error_offset));
     switch (error_type) {
       default:
-        fprintf(stderr,
-                "Unexpected TSQueryError: %d\n",
-                (int)(error_type));
+        (void)fprintf(stderr,
+                      "Unexpected TSQueryError: %d\n",
+                      (int)(error_type));
         exit(1);
         break;
       case TSQueryErrorNone:
@@ -1551,7 +1554,7 @@ static Janet cfun_query_capture_name_for_id(int32_t argc, Janet *argv) {
 
   uint32_t id = (uint32_t)janet_getinteger(argv, 1);
 
-  uint32_t length;
+  uint32_t length = 0;
 
   const char *name = ts_query_capture_name_for_id(*query_pp, id, &length);
   if (NULL == name) {
@@ -1608,7 +1611,7 @@ static int jts_query_get(void *p, Janet key, Janet *out) {
 ////////
 
 static TSQueryCursor **jts_get_query_cursor(const Janet *argv, uint32_t n) {
-  return (TSQueryCursor **)janet_getabstract(argv, n, &jts_query_cursor_type);
+  return (TSQueryCursor **)janet_getabstract(argv, (int32_t)n, &jts_query_cursor_type);
 }
 
 /**
@@ -1634,6 +1637,7 @@ static TSQueryCursor **jts_get_query_cursor(const Janet *argv, uint32_t n) {
  *  `ts_query_cursor_exec` again.
  */
 static Janet cfun_query_cursor_new(int32_t argc, Janet *argv) {
+  (void)argv;
   janet_fixarity(argc, 0);
 
   TSQueryCursor **qc_pp =
